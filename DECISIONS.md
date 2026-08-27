@@ -12,9 +12,9 @@ This document records the foundational architectural decisions established for *
 - **Decision**: Deploy and optimize for Vercel / serverless edge hosting first.
 - **Rationale**: Prioritizes immediate availability, simplified CI/CD, and fast iteration without premature infrastructure complexity.
 
-### 3. Application Authentication via Neon Auth
-- **Decision**: Use **Neon Auth** for application-level authentication.
-- **Rationale**: Integrates natively with the Postgres database layer and provides managed auth sessions for the single-user control plane.
+### 3. Application Authentication via Current Neon Auth (Managed Better Auth)
+- **Decision**: Use **current first-party Neon Auth** (`@neondatabase/auth`) backed by Managed Better Auth, avoiding legacy Stack Auth, Clerk, Auth.js, or custom cookie sessions.
+- **Rationale**: Integrates natively with the Neon Postgres database layer, supports branch-aware authentication, and provides Next.js middleware and server component session caching.
 - **Boundary**:
   ```text
   User -> Neon Auth -> Daemon Dashboard
@@ -49,5 +49,5 @@ This document records the foundational architectural decisions established for *
 - **Rationale**: Stremio Switch already functions independently. Migration will be formally evaluated at Milestone 6 after provider and core capabilities are established.
 
 ### 10. Database Persistence Introduced on Actual Requirement
-- **Decision**: Defer Neon / PostgreSQL schema configuration until persistent state (Neon Auth / OAuth tokens) is actively required in Milestone 2.
+- **Decision**: Defer custom Neon / PostgreSQL schema configuration until persistent state (Real-Debrid OAuth tokens) is actively required in Milestone 2B/3.
 - **Rationale**: Avoids maintaining empty migrations or idle database schemas before functional requirements demand them.

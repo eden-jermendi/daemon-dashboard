@@ -4,19 +4,17 @@ Daemon Dashboard is a modular personal dashboard and control plane for services,
 
 ## Current Status
 
-**Milestone 1: Dashboard Foundation** (Active / Initial Shell)
+**Milestone 2A: Neon Auth Access Boundary** (Active / In Progress)
 
-The project is currently an initial application shell providing the modular control panel layout, module primitives, and placeholder pages. No external integrations or databases are active yet.
-
-- **Real-Debrid**: The first planned functional integration module. Dedicated route and UI shell established (`/modules/real-debrid`).
-- **Stremio Switch**: Remains an independent external service for now; integration will be evaluated in a later milestone.
-- **Application Authentication**: Neon Auth is the planned authentication mechanism (to be introduced in Milestone 2).
-- **Provider Authentication**: Real-Debrid will integrate via its official OAuth2 web flow with server-side token management.
+- **Application Authentication (Implemented - Milestone 2A)**: Protected by Neon Auth (Managed Better Auth via `@neondatabase/auth`). Unauthenticated visitors are redirected to `/auth/sign-in`.
+- **Real-Debrid Module (Planned - Milestone 2B/3)**: Dedicated route and UI shell established (`/modules/real-debrid`). OAuth2 web flow integration will be introduced in Milestone 2B.
+- **Stremio Switch (Planned - Milestone 6)**: Operates as an independent application; integration assessment deferred.
 
 ## Tech Stack
 
-- **Framework**: [Next.js](https://nextjs.org/) (App Router, React 19)
+- **Framework**: [Next.js](https://nextjs.org/) (App Router, React 19, Next.js 16.3.3)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Authentication**: [Neon Auth](https://neon.tech/docs/neon-auth) (`@neondatabase/auth` - Managed Better Auth)
 - **Styling**: Pure CSS / CSS Modules (Utilitarian systems aesthetic)
 - **Code Quality**: ESLint
 
@@ -26,6 +24,20 @@ The project is currently an initial application shell providing the modular cont
 
 - Node.js 20+ (Node.js 24 recommended)
 - npm
+- Neon Project with Managed Better Auth enabled
+
+### Environment Configuration
+
+Copy `.env.example` to `.env.local` and configure your Neon Auth parameters:
+
+```bash
+cp .env.example .env.local
+```
+
+Required variables:
+- `NEON_AUTH_BASE_URL` — Neon Auth URL from Neon Console (Auth -> Configuration)
+- `NEON_AUTH_COOKIE_SECRET` — 32+ character string for cookie signing (`openssl rand -base64 32`)
+- `NEXT_PUBLIC_NEON_AUTH_URL` — Public Auth base URL for client authentication requests
 
 ### Development
 
@@ -43,7 +55,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - `npm run dev` — Starts the Next.js development server
 - `npm run build` — Builds the application for production
 - `npm run start` — Starts the production server
-- `npm run lint` — Runs ESLint checks
+- `npm run lint` — Runs ESLint checks (`eslint .`)
 - `npm run typecheck` — Validates TypeScript types (`tsc --noEmit`)
 
 ## Documentation

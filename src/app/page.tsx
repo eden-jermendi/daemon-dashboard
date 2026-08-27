@@ -1,11 +1,17 @@
+import { auth } from "@/lib/auth/server";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { ModuleTile } from "@/components/dashboard/module-tile";
 import styles from "./page.module.css";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const { data: session } = await auth.getSession();
+  const userEmail = session?.user?.email ?? null;
+
   return (
     <div className={styles.mainLayout}>
-      <DashboardHeader />
+      <DashboardHeader userEmail={userEmail} />
 
       <main className={styles.content}>
         <div className={styles.systemBanner}>

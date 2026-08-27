@@ -1,11 +1,17 @@
 import Link from "next/link";
+import { auth } from "@/lib/auth/server";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import styles from "./page.module.css";
 
-export default function RealDebridModulePage() {
+export const dynamic = "force-dynamic";
+
+export default async function RealDebridModulePage() {
+  const { data: session } = await auth.getSession();
+  const userEmail = session?.user?.email ?? null;
+
   return (
     <div className={styles.mainLayout}>
-      <DashboardHeader currentModule="REAL-DEBRID" />
+      <DashboardHeader currentModule="REAL-DEBRID" userEmail={userEmail} />
 
       <main className={styles.content}>
         <div className={styles.navBar}>
@@ -67,14 +73,14 @@ export default function RealDebridModulePage() {
               <p className={styles.statusCardText}>
                 Per project security constraints, Real-Debrid API tokens and OAuth2
                 secrets are strictly handled server-side and never exposed to the
-                browser. Integration will be configured in Milestone 2 and Milestone 3.
+                browser. Integration will be configured in Milestone 2B and Milestone 3.
               </p>
             </div>
           </div>
 
           <div className={styles.panelFooter}>
             <span className="mono" style={{ color: "var(--text-muted)" }}>
-              MILESTONE 1 : SHELL ONLY
+              MILESTONE 2A : AUTH BOUNDARY ACTIVE
             </span>
             <Link href="/" className="system-btn">
               RETURN TO DASHBOARD
