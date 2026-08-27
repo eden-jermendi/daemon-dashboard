@@ -39,11 +39,11 @@ export default async function Home() {
           >
             <p className={styles.moduleDescription}>
               High-speed unrestricted link downloader and media torrent pipeline.
-              Authentication via 3-legged OAuth2 web flow.
+              Authentication via official open-source device OAuth flow.
             </p>
             <div className={styles.specRow}>
               <span className={styles.specKey}>Auth Protocol</span>
-              <span className={styles.specVal}>OAuth2 Web Flow (Server-side)</span>
+              <span className={styles.specVal}>Open-Source Device Flow (Server-side)</span>
             </div>
             <div className={styles.specRow}>
               <span className={styles.specKey}>Connection State</span>

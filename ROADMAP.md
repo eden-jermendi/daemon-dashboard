@@ -17,11 +17,12 @@ This roadmap tracks the development milestones of **Daemon Dashboard**. Only com
     - Protect `/` and `/modules/*` routes with Next.js proxy and server session checks.
     - Implement utilitarian restricted access & sign-in screen at `/auth/sign-in`.
     - Implement header session status and sign-out control.
-  - [x] **Milestone 2B: Real-Debrid OAuth Foundation**
-    - Server-side 3-legged Real-Debrid OAuth2 web flow (`connect`, `callback`, `disconnect`).
-    - AES-256-GCM token encryption before database persistence.
-    - PostgreSQL persistence schema (`provider_connections` table via Neon).
-    - Provider-specific refresh token handler implementing documented device grant.
+  - [x] **Milestone 2B: Real-Debrid Open-Source Device OAuth Connection**
+    - Server-side open-source device OAuth flow (`/device/code`, `/device/credentials`, `/token`) using public client ID `X245A4XAIBGVM`.
+    - Interactive UI with user code display, copy helper, countdown, and cancellation.
+    - Serverless polling architecture with encrypted HttpOnly device code cookies.
+    - AES-256-GCM encryption for generated user-bound credentials and tokens in Neon Postgres.
+    - Automatic token refresh with stored generated credentials and documented device grant.
     - Real-Debrid connection lifecycle toggle in `/modules/real-debrid`.
 
 - [ ] **Milestone 3: Real-Debrid Connection & Account Status**

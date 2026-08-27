@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth/server";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { getRealDebridConnectionStatus } from "@/features/real-debrid/server/connection";
+import { RealDebridConnectClient } from "./real-debrid-connect-client";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -46,26 +47,6 @@ export default async function RealDebridModulePage({
     bannerMessage = {
       type: "success",
       text: "REAL-DEBRID DISCONNECTED: Stored authorization credentials removed.",
-    };
-  } else if (errorParam === "invalid_state") {
-    bannerMessage = {
-      type: "error",
-      text: "CONNECTION FAILED: Invalid or expired OAuth state parameter.",
-    };
-  } else if (errorParam === "provider_rejected") {
-    bannerMessage = {
-      type: "error",
-      text: "CONNECTION FAILED: Authorization was rejected by Real-Debrid.",
-    };
-  } else if (errorParam === "exchange_failed") {
-    bannerMessage = {
-      type: "error",
-      text: "CONNECTION FAILED: Real-Debrid token exchange was unsuccessful.",
-    };
-  } else if (errorParam === "not_configured") {
-    bannerMessage = {
-      type: "error",
-      text: "CONFIGURATION ERROR: Real-Debrid OAuth client credentials are missing.",
     };
   } else if (errorParam === "disconnect_failed") {
     bannerMessage = {
@@ -136,22 +117,7 @@ export default async function RealDebridModulePage({
                 </div>
               </div>
             ) : (
-              <div className={styles.statusCard}>
-                <div className={styles.statusCardHeader}>STATUS: UNLINKED</div>
-                <div className={styles.statusCardState}>NOT CONNECTED</div>
-                <p className={styles.statusCardText}>
-                  No Real-Debrid provider credentials or active OAuth2 sessions are configured for this user.
-                  Connect your account to authorize Daemon Dashboard.
-                </p>
-                <div className={styles.statusActions}>
-                  <a
-                    href="/api/integrations/real-debrid/connect"
-                    className="system-btn system-btn-primary"
-                  >
-                    CONNECT REAL-DEBRID
-                  </a>
-                </div>
-              </div>
+              <RealDebridConnectClient />
             )}
 
             {/* Connection Information */}
@@ -160,7 +126,7 @@ export default async function RealDebridModulePage({
               <div className={styles.infoGrid}>
                 <div className={styles.infoBox}>
                   <div className={styles.infoBoxLabel}>OAuth2 Protocol</div>
-                  <div className={styles.infoBoxValue}>3-Legged Website Flow</div>
+                  <div className={styles.infoBoxValue}>Open-Source Device Flow (X245A4XAIBGVM)</div>
                 </div>
                 <div className={styles.infoBox}>
                   <div className={styles.infoBoxLabel}>Credential Storage</div>

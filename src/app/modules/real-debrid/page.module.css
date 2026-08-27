@@ -181,6 +181,147 @@
   color: #ffffff;
 }
 
+/* Device Code Authorization UI Card */
+.authCard {
+  border: 1px solid #9e6a03;
+  background-color: #1a150b;
+  padding: 20px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.authCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--status-warning-text);
+  text-transform: uppercase;
+}
+
+.authSteps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.authStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.stepNum {
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
+  background-color: #30363d;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.stepText {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.openAuthBtn {
+  align-self: flex-start;
+}
+
+.codeContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.codeDisplay {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #58a6ff;
+  background-color: #0d1117;
+  padding: 8px 16px;
+  border: 1px solid #30363d;
+  border-radius: var(--radius-xs);
+}
+
+.copyBtn {
+  background-color: #21262d;
+}
+
+.authFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #30363d;
+  padding-top: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.waitingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--status-warning-text);
+}
+
+.pulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--status-warning-text);
+  box-shadow: 0 0 8px var(--status-warning-text);
+  animation: pulseAnimation 1.5s infinite;
+}
+
+@keyframes pulseAnimation {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+}
+
+.countdownText {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.cancelBtn {
+  background-color: #21262d;
+  border-color: #484f58;
+}
+
 .section {
   display: flex;
   flex-direction: column;

@@ -17,7 +17,7 @@
 - **Modular Monolith**: Features and modules live in standard application directories (`src/app/modules/*`, `src/components/*`, `src/features/*`). No dynamic runtime plugin frameworks.
 - **Single-User Scope**: Personal dashboard for a single user. Do not introduce multi-tenant organizations, invitations, team roles, or billing.
 - **Application Auth**: **Neon Auth** (Managed Better Auth via `@neondatabase/auth`) is the designated auth layer. Do not substitute Clerk, Auth.js, Supabase Auth, or legacy Stack Auth.
-- **Provider Auth (Real-Debrid)**: **OAuth2 Web Flow** (Milestone 2B+). All client secrets, access tokens, and refresh tokens must remain strictly server-side.
-- **Distinguish Auth Layers**: Daemon application authentication (`Neon Auth`) is distinct from provider authorization (`Real-Debrid OAuth2`). Do not conflate them.
+- **Provider Auth (Real-Debrid)**: **Open-Source / Device OAuth Flow** (Milestone 2B+ using public client ID `X245A4XAIBGVM`). Generated user-bound client credentials, access tokens, and refresh tokens are AES-256-GCM encrypted and remain strictly server-side.
+- **Distinguish Auth Layers**: Daemon application authentication (`Neon Auth`) is distinct from provider authorization (`Real-Debrid Device OAuth`). Do not conflate them.
 - **Stremio Switch**: Remains in its separate repository until explicit Milestone 6 integration evaluation. Do not migrate code prematurely.
 - **No Premature Infrastructure**: No Docker, no Redis, no background queues/microservices, and no database scaffolding before active functional requirements.

@@ -2,7 +2,6 @@ import "server-only";
 import { getDb, isDbConfigured } from "@/lib/db";
 import { encryptToken, decryptToken } from "./encryption";
 import {
-  getRealDebridConfig,
   refreshRealDebridTokens,
   disableRealDebridAccessToken,
 } from "./oauth";
@@ -31,6 +30,8 @@ export async function getRealDebridConnection(
       id,
       user_id,
       provider,
+      encrypted_client_id,
+      encrypted_client_secret,
       encrypted_access_token,
       encrypted_refresh_token,
       token_type,
@@ -55,11 +56,9 @@ export async function getRealDebridConnection(
 export async function getRealDebridConnectionStatus(
   userId: string | null | undefined
 ): Promise<RealDebridConnectionStatus> {
-  const config = getRealDebridConfig();
-
   if (!userId || !isDbConfigured) {
     return {
-      isConfigured: config.isConfigured && isDbConfigured,
+      isConfigured: isDbConfigured,
       isConnected: false,
       expiresAt: null,
       updatedAt: null,
@@ -70,7 +69,7 @@ export async function getRealDebridConnectionStatus(
     const connection = await getRealDebridConnection(userId);
     if (!connection) {
       return {
-        isConfigured: config.isConfigured && isDbConfigured,
+        isConfigured: isDbConfigured,
         isConnected: false,
         expiresAt: null,
         updatedAt: null,
@@ -85,7 +84,7 @@ export async function getRealDebridConnectionStatus(
       : null;
 
     return {
-      isConfigured: config.isConfigured && isDbConfigured,
+      isConfigured: isDbConfigured,
       isConnected: true,
       expiresAt,
       updatedAt,
@@ -93,7 +92,7 @@ export async function getRealDebridConnectionStatus(
   } catch (err) {
     console.error("Failed to query Real-Debrid connection status:", err);
     return {
-      isConfigured: config.isConfigured && isDbConfigured,
+      isConfigured: isDbConfigured,
       isConnected: false,
       expiresAt: null,
       updatedAt: null,
@@ -102,12 +101,16 @@ export async function getRealDebridConnectionStatus(
 }
 
 /**
- * Persists newly acquired or refreshed Real-Debrid tokens in encrypted format.
+ * Persists newly acquired or refreshed Real-Debrid tokens and generated credentials in encrypted format.
  */
-export async function saveRealDebridConnection(
-  userId: string,
-  tokens: RealDebridTokenResponse
-): Promise<void> {
+export async function saveRealDebridConnection(params: {
+  userId: string;
+  tokens: RealDebridTokenResponse;
+  clientId?: string;
+  clientSecret?: string;
+}): Promise<void> {
+  const { userId, tokens, clientId, clientSecret } = params;
+
   if (!isDbConfigured) {
     throw new Error("Cannot save provider connection: DATABASE_URL is not configured.");
   }
@@ -118,12 +121,17 @@ export async function saveRealDebridConnection(
     ? encryptToken(tokens.refresh_token)
     : "";
 
+  const encryptedClientId = clientId ? encryptToken(clientId) : null;
+  const encryptedClientSecret = clientSecret ? encryptToken(clientSecret) : null;
+
   const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
   await sql`
     INSERT INTO provider_connections (
       user_id,
       provider,
+      encrypted_client_id,
+      encrypted_client_secret,
       encrypted_access_token,
       encrypted_refresh_token,
       token_type,
@@ -132,6 +140,8 @@ export async function saveRealDebridConnection(
     ) VALUES (
       ${userId},
       ${PROVIDER_NAME},
+      ${encryptedClientId},
+      ${encryptedClientSecret},
       ${encryptedAccessToken},
       ${encryptedRefreshToken},
       ${tokens.token_type || "Bearer"},
@@ -139,6 +149,8 @@ export async function saveRealDebridConnection(
       NOW()
     )
     ON CONFLICT (user_id, provider) DO UPDATE SET
+      encrypted_client_id = COALESCE(EXCLUDED.encrypted_client_id, provider_connections.encrypted_client_id),
+      encrypted_client_secret = COALESCE(EXCLUDED.encrypted_client_secret, provider_connections.encrypted_client_secret),
       encrypted_access_token = EXCLUDED.encrypted_access_token,
       encrypted_refresh_token = CASE 
         WHEN EXCLUDED.encrypted_refresh_token <> '' THEN EXCLUDED.encrypted_refresh_token 
@@ -179,7 +191,7 @@ export async function deleteRealDebridConnection(userId: string): Promise<void> 
 /**
  * Obtains a valid, unexpired Real-Debrid access token for the given user.
  * If the cached access token is nearing expiration, automatically refreshes it
- * using the documented Real-Debrid device grant workflow and updates persistence.
+ * using the stored user-bound client credentials and documented device grant.
  */
 export async function getValidRealDebridAccessToken(
   userId: string
@@ -197,17 +209,35 @@ export async function getValidRealDebridAccessToken(
     return decryptToken(connection.encrypted_access_token);
   }
 
-  // Token is expired or expiring soon -> Refresh
+  // Token is expired or expiring soon -> Refresh using stored generated client credentials
   if (!connection.encrypted_refresh_token) {
     throw new Error(
       "Real-Debrid access token is expired and no refresh token is stored. Please reconnect."
     );
   }
 
-  const storedRefreshToken = decryptToken(connection.encrypted_refresh_token);
-  const newTokens = await refreshRealDebridTokens(storedRefreshToken);
+  if (!connection.encrypted_client_id || !connection.encrypted_client_secret) {
+    throw new Error(
+      "Real-Debrid OAuth client credentials are missing from stored connection. Please reconnect."
+    );
+  }
 
-  await saveRealDebridConnection(userId, newTokens);
+  const clientId = decryptToken(connection.encrypted_client_id);
+  const clientSecret = decryptToken(connection.encrypted_client_secret);
+  const storedRefreshToken = decryptToken(connection.encrypted_refresh_token);
+
+  const newTokens = await refreshRealDebridTokens({
+    clientId,
+    clientSecret,
+    refreshToken: storedRefreshToken,
+  });
+
+  await saveRealDebridConnection({
+    userId,
+    tokens: newTokens,
+    clientId,
+    clientSecret,
+  });
 
   return newTokens.access_token;
 }

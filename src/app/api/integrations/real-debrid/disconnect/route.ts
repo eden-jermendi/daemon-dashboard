@@ -8,6 +8,10 @@ export async function POST(request: NextRequest) {
   // 1. Ensure authenticated Neon Auth session
   const { data: session } = await auth.getSession();
   if (!session?.user?.id) {
+    const isJson = request.headers.get("accept")?.includes("application/json");
+    if (isJson) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const signInUrl = new URL("/auth/sign-in", request.url);
     return NextResponse.redirect(signInUrl);
   }
@@ -15,10 +19,18 @@ export async function POST(request: NextRequest) {
   // 2. Remove connection and revoke token upstream
   try {
     await deleteRealDebridConnection(session.user.id);
+    const isJson = request.headers.get("accept")?.includes("application/json");
+    if (isJson) {
+      return NextResponse.json({ status: "disconnected" });
+    }
     const redirectUrl = new URL("/modules/real-debrid?success=disconnected", request.url);
     return NextResponse.redirect(redirectUrl, { status: 303 });
   } catch (err) {
     console.error("Failed to disconnect Real-Debrid:", err instanceof Error ? err.message : "Unknown error");
+    const isJson = request.headers.get("accept")?.includes("application/json");
+    if (isJson) {
+      return NextResponse.json({ error: "Failed to disconnect." }, { status: 500 });
+    }
     const redirectUrl = new URL("/modules/real-debrid?error=disconnect_failed", request.url);
     return NextResponse.redirect(redirectUrl, { status: 303 });
   }
