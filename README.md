@@ -4,18 +4,20 @@ Daemon Dashboard is a modular personal dashboard and control plane for services,
 
 ## Current Status
 
-**Milestone 2A: Neon Auth Access Boundary** (Active / In Progress)
+**Milestone 2: Security & Provider Authentication Boundary** (Complete)
 
-- **Application Authentication (Implemented - Milestone 2A)**: Protected by Neon Auth (Managed Better Auth via `@neondatabase/auth`). Unauthenticated visitors are redirected to `/auth/sign-in`.
-- **Single-User Owner Bootstrap (Implemented - Milestone 2A)**: Initial account registration flow available at `/auth/sign-up` before permanently locking signups in Neon Console.
-- **Real-Debrid Module (Planned - Milestone 2B/3)**: Dedicated route and UI shell established (`/modules/real-debrid`). OAuth2 web flow integration will be introduced in Milestone 2B.
-- **Stremio Switch (Planned - Milestone 6)**: Operates as an independent application; integration assessment deferred.
+- **Application Authentication (Milestone 2A)**: Protected by Neon Auth (Managed Better Auth via `@neondatabase/auth`). Unauthenticated visitors are redirected to `/auth/sign-in`.
+- **Real-Debrid OAuth2 Connection (Milestone 2B)**: 3-legged OAuth2 web flow established with encrypted token persistence in Neon Postgres (AES-256-GCM) and automatic token refresh via documented device grant.
+- **Real-Debrid Module (Milestone 3 - Next)**: Account status, subscription watch, and health monitoring.
+- **Stremio Switch (Milestone 6 - Planned)**: Operates as an independent application; integration assessment deferred.
 
 ## Tech Stack
 
 - **Framework**: [Next.js](https://nextjs.org/) (App Router, React 19, Next.js 16.3.3)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Authentication**: [Neon Auth](https://neon.tech/docs/neon-auth) (`@neondatabase/auth` - Managed Better Auth)
+- **Persistence**: [Neon Serverless Postgres](https://neon.tech/docs/serverless/serverless-driver) (`@neondatabase/serverless`)
+- **Security**: Node.js `crypto` (AES-256-GCM token encryption, timing-safe OAuth CSRF validation)
 - **Styling**: Pure CSS / CSS Modules (Utilitarian systems aesthetic)
 - **Code Quality**: ESLint
 
@@ -25,34 +27,46 @@ Daemon Dashboard is a modular personal dashboard and control plane for services,
 
 - Node.js 20+ (Node.js 24 recommended)
 - npm
-- Neon Project with Managed Better Auth enabled
+- Neon Project with Managed Better Auth and Postgres database
+- Real-Debrid Account (for OAuth Client credentials at https://real-debrid.com/api)
 
 ### Environment Configuration
 
-Copy `.env.example` to `.env.local` and configure your Neon Auth parameters:
+Copy `.env.example` to `.env.local` and configure your environment parameters:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Required variables:
+#### 1. Neon Auth Configuration
 - `NEON_AUTH_BASE_URL` — Neon Auth URL from Neon Console (Auth -> Configuration)
 - `NEON_AUTH_COOKIE_SECRET` — 32+ character string for cookie signing (`openssl rand -base64 32`)
 - `NEXT_PUBLIC_NEON_AUTH_URL` — Public Auth base URL for client authentication requests
 
-### Single-User Account Bootstrap & Lockout Procedure
+#### 2. Neon Database Connection
+- `DATABASE_URL` — Pooled Postgres connection URL (`-pooler` endpoint)
+- `DATABASE_URL_UNPOOLED` — Direct Postgres connection URL (for schema migrations)
 
-1. **Start Dev Server**:
-   ```bash
-   npm run dev
-   ```
-2. **Create Owner Account**:
-   Navigate to [http://localhost:3000/auth/sign-up](http://localhost:3000/auth/sign-up) (or click `[ Initial Setup / Create Owner Account ]` from the sign-in screen). Enter your email and password to create the dashboard owner account.
-3. **Lock Future Registrations**:
-   In your [Neon Console](https://console.neon.tech):
-   - Go to **Auth** -> **Email & Password**.
-   - Enable **Disable sign-ups** (or via Neon API `PATCH` with `disable_sign_up: true`).
-   - This prevents any subsequent registrations while preserving your owner account login.
+#### 3. Real-Debrid OAuth2 Configuration
+- Register an application in the [Real-Debrid API Dashboard](https://real-debrid.com/api) with your redirect URL (e.g. `http://localhost:3000/api/integrations/real-debrid/callback` for local dev or `https://your-domain.vercel.app/api/integrations/real-debrid/callback` for production).
+- `REAL_DEBRID_CLIENT_ID` — OAuth Client ID
+- `REAL_DEBRID_CLIENT_SECRET` — OAuth Client Secret (strictly server-only)
+- `REAL_DEBRID_REDIRECT_URI` — Configured OAuth callback URL
+
+#### 4. Token Encryption Key
+Generate a secure 32-byte (256-bit) encryption key:
+```bash
+openssl rand -hex 32
+```
+- `PROVIDER_TOKEN_ENCRYPTION_KEY` — 64-character hex string used for AES-256-GCM token encryption.
+
+### Database Migrations
+
+Apply database migrations to your Neon database:
+
+```bash
+npm run db:migrate
+```
 
 ### Development Scripts
 
@@ -61,6 +75,8 @@ Required variables:
 - `npm run start` — Starts the production server
 - `npm run lint` — Runs ESLint checks (`eslint .`)
 - `npm run typecheck` — Validates TypeScript types (`tsc --noEmit`)
+- `npm run db:migrate` — Executes database migrations
+- `npm test` — Runs unit test suites
 
 ## Documentation
 

@@ -39,6 +39,29 @@
   background-color: var(--bg-surface-elevated);
 }
 
+.banner {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bannerSuccess {
+  background-color: var(--status-online-bg);
+  border: 1px solid var(--status-online-border);
+  color: var(--status-online-text);
+}
+
+.bannerError {
+  background-color: #490202;
+  border: 1px solid #da3633;
+  color: #f85149;
+}
+
 .modulePanel {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-default);
@@ -90,11 +113,21 @@
 .statusCard {
   border: 1px solid var(--status-warning-border);
   background-color: var(--status-warning-bg);
-  padding: 16px;
+  padding: 18px 20px;
   border-radius: var(--radius-xs);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+}
+
+.statusCardConnected {
+  border: 1px solid var(--status-online-border);
+  background-color: var(--status-online-bg);
+  padding: 18px 20px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .statusCardHeader {
@@ -103,6 +136,15 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--status-warning-text);
+  text-transform: uppercase;
+}
+
+.statusCardHeaderConnected {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--status-online-text);
   text-transform: uppercase;
 }
 
@@ -118,6 +160,25 @@
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.5;
+}
+
+.statusActions {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dangerBtn {
+  background-color: #21262d;
+  border: 1px solid #da3633;
+  color: #f85149;
+}
+
+.dangerBtn:hover {
+  background-color: #b62324;
+  border-color: #f85149;
+  color: #ffffff;
 }
 
 .section {
@@ -172,4 +233,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
 }

@@ -48,6 +48,14 @@ This document records the foundational architectural decisions established for *
 - **Decision**: Do not migrate the separate Stremio Switch repository into Daemon Dashboard yet.
 - **Rationale**: Stremio Switch already functions independently. Migration will be formally evaluated at Milestone 6 after provider and core capabilities are established.
 
-### 10. Database Persistence Introduced on Actual Requirement
-- **Decision**: Defer custom Neon / PostgreSQL schema configuration until persistent state (Real-Debrid OAuth tokens) is actively required in Milestone 2B/3.
-- **Rationale**: Avoids maintaining empty migrations or idle database schemas before functional requirements demand them.
+### 10. Database Persistence via Lightweight Serverless Driver
+- **Decision**: Adopt `@neondatabase/serverless` SQL template tagged queries for Neon Postgres persistence without introducing a heavy ORM.
+- **Rationale**: Keeps bundle overhead minimal and cold starts low in serverless environments while supporting parameterized SQL queries and schema migrations.
+
+### 11. Application-Side AES-256-GCM Token Encryption
+- **Decision**: Encrypt provider access and refresh tokens at rest in Neon Postgres using native Node.js `crypto` AES-256-GCM authenticated encryption with a dedicated `PROVIDER_TOKEN_ENCRYPTION_KEY`.
+- **Rationale**: Provides defense-in-depth for high-value provider credentials, ensuring tokens are never stored in plaintext within database columns.
+
+### 12. Provider-Specific Real-Debrid Refresh Grant Implementation
+- **Decision**: Implement the official Real-Debrid documented refresh grant (`http://oauth.net/grant_type/device/1.0` with `code=<refresh_token>`) rather than standard generic `grant_type=refresh_token`.
+- **Rationale**: Real-Debrid's token endpoint strictly enforces this non-standard device grant for refreshing website and application credentials.

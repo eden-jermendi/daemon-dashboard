@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth/server";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { ModuleTile } from "@/components/dashboard/module-tile";
+import { getRealDebridConnectionStatus } from "@/features/real-debrid/server/connection";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,9 @@ export default async function Home() {
   const { data: session } = await auth.getSession();
   const userName = session?.user?.name ?? null;
   const userEmail = session?.user?.email ?? null;
+  const userId = session?.user?.id ?? null;
+
+  const rdStatus = await getRealDebridConnectionStatus(userId);
 
   return (
     <div className={styles.mainLayout}>
@@ -26,8 +30,8 @@ export default async function Home() {
           {/* Prominent Module: Real-Debrid */}
           <ModuleTile
             title="REAL-DEBRID"
-            status="NOT CONFIGURED"
-            statusType="warning"
+            status={rdStatus.isConnected ? "CONNECTED" : "NOT CONFIGURED"}
+            statusType={rdStatus.isConnected ? "online" : "warning"}
             colSpan={8}
             destination="/modules/real-debrid"
             actionLabel="OPEN"
@@ -35,19 +39,21 @@ export default async function Home() {
           >
             <p className={styles.moduleDescription}>
               High-speed unrestricted link downloader and media torrent pipeline.
-              Authentication and provider services planned for Milestone 2.
+              Authentication via 3-legged OAuth2 web flow.
             </p>
             <div className={styles.specRow}>
               <span className={styles.specKey}>Auth Protocol</span>
-              <span className={styles.specVal}>OAuth2 Web Flow (Planned)</span>
+              <span className={styles.specVal}>OAuth2 Web Flow (Server-side)</span>
             </div>
             <div className={styles.specRow}>
               <span className={styles.specKey}>Connection State</span>
-              <span className={styles.specVal}>Disconnected</span>
+              <span className={styles.specVal}>
+                {rdStatus.isConnected ? "Connected (Encrypted)" : "Disconnected"}
+              </span>
             </div>
             <div className={styles.specRow}>
               <span className={styles.specKey}>Features</span>
-              <span className={styles.specVal}>Unrestrict Links, Torrents, Account Status</span>
+              <span className={styles.specVal}>OAuth2 Active, Status & Debrid Engine in Milestones 3-5</span>
             </div>
           </ModuleTile>
 
