@@ -60,6 +60,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Documentation
 
-- [ROADMAP.md](file:///Users/eden/Documents/Documents/code/personal-projects/nextjs/daemon-dashboard/ROADMAP.md) — Phased milestone plan and current progress.
-- [DECISIONS.md](file:///Users/eden/Documents/Documents/code/personal-projects/nextjs/daemon-dashboard/DECISIONS.md) — Architectural and technical decision records.
-- [GEMINI.md](file:///Users/eden/Documents/Documents/code/personal-projects/nextjs/daemon-dashboard/GEMINI.md) — Project guidelines and agent memory.
+- [ROADMAP.md](file://daemon-dashboard/ROADMAP.md) — Phased milestone plan and current progress.
+- [DECISIONS.md](file://daemon-dashboard/DECISIONS.md) — Architectural and technical decision records.
+- [GEMINI.md](file://daemon-dashboard/GEMINI.md) — Project guidelines and agent memory.

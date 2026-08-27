@@ -11,7 +11,8 @@
 - **Commit Conventions**: Use conventional commits (e.g., `feat: ...`, `fix: ...`, `refactor: ...`, `docs: ...`).
 
 ## Architecture & Project Boundaries
-- **Core Stack**: Next.js (App Router), React 19, TypeScript, ESLint (`eslint .`), `src/` directory layout.
+- **Core Stack**: Next.js 16 (App Router), React 19, TypeScript, ESLint (`eslint .`), `src/` directory layout.
+- **Proxy Convention**: Uses Next.js 16 `src/proxy.ts` convention rather than deprecated `middleware.ts`.
 - **Styling**: Pure CSS / CSS Modules with a utilitarian systems-administration aesthetic. Avoid Tailwind or heavy UI frameworks unless explicitly requested.
 - **Modular Monolith**: Features and modules live in standard application directories (`src/app/modules/*`, `src/components/*`, `src/features/*`). No dynamic runtime plugin frameworks.
 - **Single-User Scope**: Personal dashboard for a single user. Do not introduce multi-tenant organizations, invitations, team roles, or billing.
