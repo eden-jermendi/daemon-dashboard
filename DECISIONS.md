@@ -59,3 +59,7 @@ This document records the foundational architectural decisions established for *
 ### 12. Documented Device Grant Refresh with User-Bound Credentials
 - **Decision**: Refresh access tokens using the stored user-bound client credentials and Real-Debrid's documented device grant (`grant_type=http://oauth.net/grant_type/device/1.0` with `code=<refresh_token>`).
 - **Rationale**: Strictly preserves Real-Debrid's provider-specific token endpoint requirements for open-source applications.
+
+### 13. Direct Download URL Control Plane Hand-off
+- **Decision**: Daemon Dashboard operates strictly as the control plane for URL verification and link unrestriction. Generated direct download URLs are returned directly to the authenticated client for direct browser download, external opening, or clipboard copy. Daemon never proxies large file bytes, stream chunks, or data plane traffic.
+- **Rationale**: Prevents bandwidth exhaustion, latency bottlenecks, memory spikes, and proxy timeout failures on serverless/hosted infrastructure.

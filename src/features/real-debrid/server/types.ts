@@ -1,3 +1,23 @@
+export type RealDebridAccountType = "premium" | "free";
+
+export interface RealDebridAccount {
+  username: string;
+  accountType: RealDebridAccountType;
+  isPremium: boolean;
+  premiumRemainingSeconds: number;
+  expiration: Date | null;
+  fidelityPoints: number;
+}
+
+export type RealDebridAccountResult =
+  | { status: "connected"; account: RealDebridAccount }
+  | { status: "disconnected" }
+  | {
+      status: "error";
+      error: "api_unavailable" | "auth_invalid" | "account_locked" | "unknown";
+      message?: string;
+    };
+
 export interface RealDebridTokenResponse {
   access_token: string;
   expires_in: number;
@@ -51,4 +71,71 @@ export interface RealDebridConnectionStatus {
   isConnected: boolean;
   expiresAt: Date | null;
   updatedAt: Date | null;
+}
+
+export type RealDebridLinkCheckStatus =
+  | "supported"
+  | "unsupported"
+  | "file_unavailable"
+  | "error";
+
+export interface RealDebridLinkCheckResult {
+  status: RealDebridLinkCheckStatus;
+  host: string | null;
+  link: string;
+  filename: string | null;
+  filesize: number | null;
+  supported: boolean;
+  message?: string;
+}
+
+export interface UnrestrictedDownload {
+  id: string;
+  filename: string;
+  filesize: number | null;
+  mimeType: string | null;
+  host: string;
+  downloadUrl: string;
+  streamable: boolean;
+  type?: string | null;
+}
+
+export interface UnrestrictResult {
+  downloads: UnrestrictedDownload[];
+}
+
+export interface RealDebridCheckResponse {
+  host?: string;
+  link?: string;
+  filename?: string;
+  filesize?: number;
+  supported?: number;
+  error?: string;
+  error_code?: number;
+}
+
+export interface RealDebridAlternativeLink {
+  id?: string;
+  filename?: string;
+  download?: string;
+  type?: string;
+  filesize?: number;
+  mimeType?: string;
+}
+
+export interface RealDebridUnrestrictLinkResponse {
+  id?: string;
+  filename?: string;
+  mimeType?: string;
+  filesize?: number;
+  link?: string;
+  host?: string;
+  chunks?: number;
+  crc?: number;
+  download?: string;
+  streamable?: number;
+  type?: string;
+  alternative?: RealDebridAlternativeLink[];
+  error?: string;
+  error_code?: number;
 }

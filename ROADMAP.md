@@ -25,13 +25,20 @@ This roadmap tracks the development milestones of **Daemon Dashboard**. Only com
     - Automatic token refresh with stored generated credentials and documented device grant.
     - Real-Debrid connection lifecycle toggle in `/modules/real-debrid`.
 
-- [ ] **Milestone 3: Real-Debrid Connection & Account Status**
-  - Connect to Real-Debrid API endpoints via server actions/routes.
-  - Display real-time account status, expiration time, points, and connection health on the Real-Debrid module.
+- [x] **Milestone 3: Real-Debrid Connection & Account Status**
+  - Authenticated server integration with official `GET /rest/1.0/user`.
+  - Application-owned normalized account model (username, account tier, expiration, remaining time, fidelity points).
+  - Defensive response validation omitting private provider details.
+  - Live glanceable account status and countdown on Home Dashboard Real-Debrid tile.
+  - Dedicated account overview grid and external portal link on Real-Debrid module page.
 
-- [ ] **Milestone 4: URL Checking & Link Unrestriction**
-  - Implement link verification and debrid unrestrict engine.
-  - Direct unrestricted download link generator with streaming playback options.
+- [x] **Milestone 4: URL Checking & Link Unrestriction**
+  - Authenticated server integration with official `POST /rest/1.0/unrestrict/check` and `POST /rest/1.0/unrestrict/link`.
+  - Strict server-only provider boundary; no direct host fetching, SSRF, or large file byte proxying through Daemon Dashboard.
+  - Ephemeral host password support without persistence or logging.
+  - Application-owned normalized models for link checks and multi-result unrestricted downloads.
+  - Interactive utilitarian Link Tool in `/modules/real-debrid` with status indicators, byte formatting, direct URL copy, and safe external open.
+  - Comprehensive automated test suite for URL validation, byte formatting, check/unrestrict normalization, and error handling.
 
 - [ ] **Milestone 5: Magnet / Torrent Workflow**
   - Real-Debrid torrent ingestion, progress tracking, and file selection.

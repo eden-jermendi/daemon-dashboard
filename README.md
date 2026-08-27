@@ -4,11 +4,13 @@ Daemon Dashboard is a modular personal dashboard and control plane for services,
 
 ## Current Status
 
-**Milestone 2: Security & Provider Authentication Boundary** (Complete)
+**Milestone 4: Real-Debrid URL Check & Link Unrestriction** (Complete)
 
 - **Application Authentication (Milestone 2A)**: Protected by Neon Auth (Managed Better Auth via `@neondatabase/auth`). Unauthenticated visitors are redirected to `/auth/sign-in`.
 - **Real-Debrid Open-Source Device OAuth (Milestone 2B)**: Device code authorization (`X245A4XAIBGVM`) with encrypted persistence in Neon Postgres (AES-256-GCM for user-bound credentials and tokens) and automatic token refresh via documented device grant.
-- **Real-Debrid Module (Milestone 3 - Next)**: Account status, subscription watch, and health monitoring.
+- **Real-Debrid Live Account Status (Milestone 3)**: Live Premium subscription monitoring, expiration countdown, fidelity points, and status display on the Dashboard tile and `/modules/real-debrid`.
+- **URL Checking & Link Unrestriction (Milestone 4)**: Interactive hoster URL validation, availability/support checks, debrid link generation, multi-stream quality resolution, and direct data plane handoff.
+- **Torrent Pipeline (Milestone 5 - Next)**: Magnet ingestion, progress tracking, and file orchestrator.
 - **Stremio Switch (Milestone 6 - Planned)**: Operates as an independent application; integration assessment deferred.
 
 ## Tech Stack

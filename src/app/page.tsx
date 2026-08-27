@@ -1,7 +1,11 @@
 import { auth } from "@/lib/auth/server";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { ModuleTile } from "@/components/dashboard/module-tile";
-import { getRealDebridConnectionStatus } from "@/features/real-debrid/server/connection";
+import {
+  getRealDebridAccount,
+  formatExpirationDate,
+  formatPremiumRemaining,
+} from "@/features/real-debrid/server/account";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +16,7 @@ export default async function Home() {
   const userEmail = session?.user?.email ?? null;
   const userId = session?.user?.id ?? null;
 
-  const rdStatus = await getRealDebridConnectionStatus(userId);
+  const accountResult = await getRealDebridAccount(userId);
 
   return (
     <div className={styles.mainLayout}>
@@ -28,34 +32,127 @@ export default async function Home() {
 
         <div className={styles.grid}>
           {/* Prominent Module: Real-Debrid */}
-          <ModuleTile
-            title="REAL-DEBRID"
-            status={rdStatus.isConnected ? "CONNECTED" : "NOT CONFIGURED"}
-            statusType={rdStatus.isConnected ? "online" : "warning"}
-            colSpan={8}
-            destination="/modules/real-debrid"
-            actionLabel="OPEN"
-            footerNote="PRIMARY INTEGRATION TARGET"
-          >
-            <p className={styles.moduleDescription}>
-              High-speed unrestricted link downloader and media torrent pipeline.
-              Authentication via official open-source device OAuth flow.
-            </p>
-            <div className={styles.specRow}>
-              <span className={styles.specKey}>Auth Protocol</span>
-              <span className={styles.specVal}>Open-Source Device Flow (Server-side)</span>
-            </div>
-            <div className={styles.specRow}>
-              <span className={styles.specKey}>Connection State</span>
-              <span className={styles.specVal}>
-                {rdStatus.isConnected ? "Connected (Encrypted)" : "Disconnected"}
-              </span>
-            </div>
-            <div className={styles.specRow}>
-              <span className={styles.specKey}>Features</span>
-              <span className={styles.specVal}>OAuth2 Active, Status & Debrid Engine in Milestones 3-5</span>
-            </div>
-          </ModuleTile>
+          {accountResult.status === "connected" ? (
+            accountResult.account.isPremium ? (
+              <ModuleTile
+                title="REAL-DEBRID"
+                status="PREMIUM ACTIVE"
+                statusType="online"
+                colSpan={8}
+                destination="/modules/real-debrid"
+                actionLabel="OPEN"
+                footerNote="ACTIVE PROVIDER INTEGRATION"
+              >
+                <p className={styles.moduleDescription}>
+                  High-speed unrestricted link downloader and media torrent pipeline for{" "}
+                  <strong>{accountResult.account.username}</strong>.
+                </p>
+                <div className={styles.specRow}>
+                  <span className={styles.specKey}>Account Tier</span>
+                  <span className={styles.specVal}>Premium</span>
+                </div>
+                <div className={styles.specRow}>
+                  <span className={styles.specKey}>Expiration</span>
+                  <span className={styles.specVal}>
+                    {formatExpirationDate(accountResult.account.expiration, "short")}
+                  </span>
+                </div>
+                <div className={styles.specRow}>
+                  <span className={styles.specKey}>Remaining</span>
+                  <span className={styles.specVal}>
+                    {formatPremiumRemaining(accountResult.account.premiumRemainingSeconds)}
+                  </span>
+                </div>
+                <div className={styles.specRow}>
+                  <span className={styles.specKey}>Fidelity Points</span>
+                  <span className={styles.specVal}>
+                    {accountResult.account.fidelityPoints.toLocaleString()} PTS
+                  </span>
+                </div>
+              </ModuleTile>
+            ) : (
+              <ModuleTile
+                title="REAL-DEBRID"
+                status="FREE ACCOUNT"
+                statusType="warning"
+                colSpan={8}
+                destination="/modules/real-debrid"
+                actionLabel="OPEN"
+                footerNote="ACTIVE PROVIDER INTEGRATION"
+              >
+                <p className={styles.moduleDescription}>
+                  Connected to Real-Debrid as{" "}
+                  <strong>{accountResult.account.username}</strong> (Non-Premium tier).
+                </p>
+                <div className={styles.specRow}>
+                  <span className={styles.specKey}>Account Tier</span>
+                  <span className={styles.specVal}>Free</span>
+                </div>
+                <div className={styles.specRow}>
+                  <span className={styles.specKey}>Remaining</span>
+                  <span className={styles.specVal}>No Premium Active</span>
+                </div>
+                <div className={styles.specRow}>
+                  <span className={styles.specKey}>Fidelity Points</span>
+                  <span className={styles.specVal}>
+                    {accountResult.account.fidelityPoints.toLocaleString()} PTS
+                  </span>
+                </div>
+              </ModuleTile>
+            )
+          ) : accountResult.status === "error" ? (
+            <ModuleTile
+              title="REAL-DEBRID"
+              status="API UNAVAILABLE"
+              statusType="warning"
+              colSpan={8}
+              destination="/modules/real-debrid"
+              actionLabel="OPEN"
+              footerNote="CONNECTION RETRYING"
+            >
+              <p className={styles.moduleDescription}>
+                Real-Debrid credentials are encrypted and stored, but the provider API
+                is temporarily unreachable.
+              </p>
+              <div className={styles.specRow}>
+                <span className={styles.specKey}>Connection State</span>
+                <span className={styles.specVal}>Connected (Encrypted)</span>
+              </div>
+              <div className={styles.specRow}>
+                <span className={styles.specKey}>Provider API</span>
+                <span className={styles.specVal}>Temporarily Unavailable</span>
+              </div>
+            </ModuleTile>
+          ) : (
+            <ModuleTile
+              title="REAL-DEBRID"
+              status="NOT CONFIGURED"
+              statusType="warning"
+              colSpan={8}
+              destination="/modules/real-debrid"
+              actionLabel="OPEN"
+              footerNote="PRIMARY INTEGRATION TARGET"
+            >
+              <p className={styles.moduleDescription}>
+                High-speed unrestricted link downloader and media torrent pipeline.
+                Authentication via official open-source device OAuth flow.
+              </p>
+              <div className={styles.specRow}>
+                <span className={styles.specKey}>Auth Protocol</span>
+                <span className={styles.specVal}>Open-Source Device Flow (Server-side)</span>
+              </div>
+              <div className={styles.specRow}>
+                <span className={styles.specKey}>Connection State</span>
+                <span className={styles.specVal}>Disconnected</span>
+              </div>
+              <div className={styles.specRow}>
+                <span className={styles.specKey}>Features</span>
+                <span className={styles.specVal}>
+                  Account Status, Link Unrestriction, Torrents
+                </span>
+              </div>
+            </ModuleTile>
+          )}
 
           {/* Stremio Switch Module */}
           <ModuleTile

@@ -62,6 +62,12 @@
   color: #f85149;
 }
 
+.bannerWarning {
+  background-color: var(--status-warning-bg);
+  border: 1px solid var(--status-warning-border);
+  color: var(--status-warning-text);
+}
+
 .modulePanel {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-default);
@@ -167,6 +173,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .dangerBtn {
@@ -179,6 +186,12 @@
   background-color: #b62324;
   border-color: #f85149;
   color: #ffffff;
+}
+
+.portalBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Device Code Authorization UI Card */
@@ -350,6 +363,9 @@
   background-color: var(--bg-surface-subtle);
   padding: 12px 14px;
   border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .infoBoxLabel {
@@ -362,9 +378,14 @@
 
 .infoBoxValue {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.infoBoxValueHighlight {
+  color: var(--status-online-text);
+  font-weight: 700;
 }
 
 .panelFooter {
@@ -376,4 +397,346 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Link Check & Unrestrict Tool Styles */
+.linkToolContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.linkToolForm {
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-muted);
+  padding: 18px 20px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.requiredMark {
+  color: #da3633;
+}
+
+.optionalMark {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.textInput {
+  width: 100%;
+  padding: 10px 14px;
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.textInput:focus {
+  border-color: #58a6ff;
+  box-shadow: 0 0 0 1px #58a6ff;
+}
+
+.textInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.primaryActionButtons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toolBtn {
+  min-width: 140px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.resetBtn {
+  background-color: #21262d;
+  border-color: #30363d;
+  color: var(--text-secondary);
+}
+
+.resetBtn:hover {
+  background-color: #30363d;
+  color: var(--text-primary);
+}
+
+/* Link Check Result Card */
+.resultSection {
+  border: 1px solid var(--border-default);
+  background-color: #0d1117;
+  padding: 18px 20px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.resultCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.resultCardTitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.resultDetailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.checkCardFooter {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #21262d;
+  padding-top: 12px;
+}
+
+.quickUnrestrictBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Unrestricted Direct Downloads Card */
+.unrestrictSection {
+  border: 1px solid var(--status-online-border);
+  background-color: #041b11;
+  padding: 20px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.unrestrictHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(46, 160, 67, 0.3);
+  padding-bottom: 10px;
+}
+
+.unrestrictTitle {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--status-online-text);
+  text-transform: uppercase;
+}
+
+.downloadsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.downloadItemCard {
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  padding: 14px 16px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.downloadItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.downloadIndex {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #58a6ff;
+}
+
+.downloadItemName {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-all;
+  flex: 1;
+}
+
+.qualityTag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  background-color: #1f6feb;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+}
+
+.streamableTag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  background-color: #238636;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+}
+
+.downloadItemMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.metaLabel {
+  color: var(--text-muted);
+}
+
+.metaValue {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.metaDivider {
+  color: #30363d;
+}
+
+.downloadLinkRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  background-color: #161b22;
+  border: 1px solid #21262d;
+  padding: 8px 12px;
+  border-radius: var(--radius-xs);
+}
+
+.directUrlPreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 200px;
+}
+
+.urlPrefix {
+  color: var(--text-muted);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.urlText {
+  color: #58a6ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.downloadActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.copyBtn {
+  background-color: #21262d;
+  border-color: #30363d;
+  font-size: 11px;
+  padding: 6px 12px;
+}
+
+.copiedBtn {
+  background-color: #238636 !important;
+  border-color: #2ea043 !important;
+  color: #ffffff !important;
+}
+
+.openBtn {
+  font-size: 11px;
+  padding: 6px 12px;
+}
+
+.unrestrictNotice {
+  border-top: 1px solid rgba(46, 160, 67, 0.3);
+  padding-top: 10px;
 }
