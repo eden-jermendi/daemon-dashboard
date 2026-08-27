@@ -7,10 +7,11 @@ import styles from "./dashboard-header.module.css";
 
 interface DashboardHeaderProps {
   currentModule?: string;
+  userName?: string | null;
   userEmail?: string | null;
 }
 
-export function DashboardHeader({ currentModule, userEmail }: DashboardHeaderProps) {
+export function DashboardHeader({ currentModule, userName, userEmail }: DashboardHeaderProps) {
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -22,6 +23,8 @@ export function DashboardHeader({ currentModule, userEmail }: DashboardHeaderPro
       router.push("/auth/sign-in");
     }
   };
+
+  const displayName = userName || (userEmail ? userEmail.split("@")[0] : null);
 
   return (
     <header className={styles.header}>
@@ -49,7 +52,7 @@ export function DashboardHeader({ currentModule, userEmail }: DashboardHeaderPro
           <div className={styles.systemStatus}>
             <span className={styles.statusLabel}>SESSION:</span>
             <span className="badge badge-online">
-              {userEmail ? userEmail.split("@")[0].toUpperCase() : "AUTHENTICATED"}
+              {displayName ? displayName.toUpperCase() : "AUTHENTICATED"}
             </span>
           </div>
 

@@ -7,11 +7,12 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const { data: session } = await auth.getSession();
+  const userName = session?.user?.name ?? null;
   const userEmail = session?.user?.email ?? null;
 
   return (
     <div className={styles.mainLayout}>
-      <DashboardHeader userEmail={userEmail} />
+      <DashboardHeader userName={userName} userEmail={userEmail} />
 
       <main className={styles.content}>
         <div className={styles.systemBanner}>

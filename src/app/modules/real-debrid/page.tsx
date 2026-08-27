@@ -7,11 +7,12 @@ export const dynamic = "force-dynamic";
 
 export default async function RealDebridModulePage() {
   const { data: session } = await auth.getSession();
+  const userName = session?.user?.name ?? null;
   const userEmail = session?.user?.email ?? null;
 
   return (
     <div className={styles.mainLayout}>
-      <DashboardHeader currentModule="REAL-DEBRID" userEmail={userEmail} />
+      <DashboardHeader currentModule="REAL-DEBRID" userName={userName} userEmail={userEmail} />
 
       <main className={styles.content}>
         <div className={styles.navBar}>
