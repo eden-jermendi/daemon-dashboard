@@ -47,16 +47,26 @@ export { formatBytes };
 
 /**
  * Defensively normalizes Real-Debrid POST /unrestrict/check responses into the application model.
+ * Handles HTTP 503, provider error objects, empty body unsupported responses, and supported payloads.
  */
 export function normalizeCheckResponse(
   data: unknown,
   httpStatus: number,
   originalLink: string
 ): RealDebridLinkCheckResult {
+  let fallbackHost: string | null = null;
+  try {
+    const parsed = new URL(originalLink);
+    fallbackHost = parsed.hostname;
+  } catch {
+    fallbackHost = null;
+  }
+
+  // 1. Check HTTP 503 (File Unavailable)
   if (httpStatus === 503) {
     return {
       status: "file_unavailable",
-      host: null,
+      host: fallbackHost,
       link: originalLink,
       filename: null,
       filesize: null,
@@ -65,29 +75,18 @@ export function normalizeCheckResponse(
     };
   }
 
-  if (!data || typeof data !== "object") {
-    return {
-      status: "error",
-      host: null,
-      link: originalLink,
-      filename: null,
-      filesize: null,
-      supported: false,
-      message: "Malformed response received from provider.",
-    };
-  }
-
-  const record = data as Record<string, unknown>;
-
-  // Check for error message or error_code in response
-  if (typeof record.error === "string" && record.error.trim()) {
+  // 2. Check for provider error objects
+  if (data && typeof data === "object" && !Array.isArray(data) && "error" in data) {
+    const record = data as Record<string, unknown>;
     const errorCode = typeof record.error_code === "number" ? record.error_code : null;
-    let message = record.error;
+    const host = typeof record.host === "string" && record.host.trim()
+      ? record.host.trim()
+      : fallbackHost;
 
-    if (errorCode === 16) {
+    if (errorCode === 16 || record.error === "unsupported_hoster" || record.error === "hoster_unsupported") {
       return {
         status: "unsupported",
-        host: typeof record.host === "string" ? record.host : null,
+        host,
         link: originalLink,
         filename: null,
         filesize: null,
@@ -99,7 +98,7 @@ export function normalizeCheckResponse(
     if (errorCode === 24 || record.error === "file_unavailable") {
       return {
         status: "file_unavailable",
-        host: typeof record.host === "string" ? record.host : null,
+        host,
         link: originalLink,
         filename: null,
         filesize: null,
@@ -108,6 +107,7 @@ export function normalizeCheckResponse(
       };
     }
 
+    let message = typeof record.error === "string" ? record.error : "Provider returned an error.";
     if (errorCode === 13) {
       message = "Invalid host password provided.";
     } else if (errorCode === 17 || errorCode === 19) {
@@ -118,7 +118,7 @@ export function normalizeCheckResponse(
 
     return {
       status: "error",
-      host: typeof record.host === "string" ? record.host : null,
+      host,
       link: originalLink,
       filename: null,
       filesize: null,
@@ -127,31 +127,61 @@ export function normalizeCheckResponse(
     };
   }
 
-  const supportedNum = typeof record.supported === "number" ? record.supported : 0;
-  const isSupported = supportedNum === 1;
+  // 3. Handle empty / null body on HTTP 200 (Live Real-Debrid behavior for unsupported/unrecognized links)
+  if ((data === null || data === undefined || data === "") && httpStatus === 200) {
+    return {
+      status: "unsupported",
+      host: fallbackHost,
+      link: originalLink,
+      filename: null,
+      filesize: null,
+      supported: false,
+      message: "Real-Debrid does not report this link as supported.",
+    };
+  }
 
-  const host = typeof record.host === "string" && record.host.trim()
-    ? record.host.trim()
-    : null;
+  // 4. Handle JSON response object with supported: 1 or supported: 0
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    const record = data as Record<string, unknown>;
+    const supportedNum = typeof record.supported === "number" ? record.supported : 0;
+    const isSupported = supportedNum === 1;
 
-  const filename = typeof record.filename === "string" && record.filename.trim()
-    ? record.filename.trim()
-    : null;
+    const host = typeof record.host === "string" && record.host.trim()
+      ? record.host.trim()
+      : fallbackHost;
 
-  const rawFilesize = typeof record.filesize === "number" && !isNaN(record.filesize) && record.filesize > 0
-    ? Math.floor(record.filesize)
-    : null;
+    const filename = typeof record.filename === "string" && record.filename.trim()
+      ? record.filename.trim()
+      : null;
 
+    const rawFilesize = typeof record.filesize === "number" && !isNaN(record.filesize) && record.filesize > 0
+      ? Math.floor(record.filesize)
+      : null;
+
+    return {
+      status: isSupported ? "supported" : "unsupported",
+      host,
+      link: typeof record.link === "string" && record.link.trim() ? record.link.trim() : originalLink,
+      filename,
+      filesize: rawFilesize,
+      supported: isSupported,
+      message: isSupported
+        ? undefined
+        : "Real-Debrid does not report this link as supported.",
+    };
+  }
+
+  // 5. Truly unrecognizable / non-200 payload
   return {
-    status: isSupported ? "supported" : "unsupported",
-    host,
-    link: typeof record.link === "string" && record.link.trim() ? record.link.trim() : originalLink,
-    filename,
-    filesize: rawFilesize,
-    supported: isSupported,
-    message: isSupported
-      ? undefined
-      : "Real-Debrid does not report this link as supported.",
+    status: "error",
+    host: fallbackHost,
+    link: originalLink,
+    filename: null,
+    filesize: null,
+    supported: false,
+    message: httpStatus !== 200
+      ? `Provider returned HTTP status ${httpStatus}.`
+      : "Provider returned an unrecognized response.",
   };
 }
 
@@ -340,9 +370,14 @@ export async function checkRealDebridLink(params: {
 
   let rawData: unknown = null;
   try {
-    rawData = await response.json();
+    const text = await response.text();
+    if (text.trim()) {
+      rawData = JSON.parse(text);
+    } else {
+      rawData = null;
+    }
   } catch {
-    // rawData remains null; normalizeCheckResponse will handle non-200 / 503 / null
+    rawData = null;
   }
 
   return normalizeCheckResponse(rawData, response.status, validation.normalizedUrl);

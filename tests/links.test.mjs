@@ -53,10 +53,18 @@ function formatBytes(bytes) {
 
 // Check normalization mirroring normalizeCheckResponse
 function normalizeCheckResponse(data, httpStatus, originalLink) {
+  let fallbackHost = null;
+  try {
+    const parsed = new URL(originalLink);
+    fallbackHost = parsed.hostname;
+  } catch {
+    fallbackHost = null;
+  }
+
   if (httpStatus === 503) {
     return {
       status: "file_unavailable",
-      host: null,
+      host: fallbackHost,
       link: originalLink,
       filename: null,
       filesize: null,
@@ -65,28 +73,17 @@ function normalizeCheckResponse(data, httpStatus, originalLink) {
     };
   }
 
-  if (!data || typeof data !== "object") {
-    return {
-      status: "error",
-      host: null,
-      link: originalLink,
-      filename: null,
-      filesize: null,
-      supported: false,
-      message: "Malformed response received from provider.",
-    };
-  }
-
-  const record = data;
-
-  if (typeof record.error === "string" && record.error.trim()) {
+  if (data && typeof data === "object" && !Array.isArray(data) && "error" in data) {
+    const record = data;
     const errorCode = typeof record.error_code === "number" ? record.error_code : null;
-    let message = record.error;
+    const host = typeof record.host === "string" && record.host.trim()
+      ? record.host.trim()
+      : fallbackHost;
 
-    if (errorCode === 16) {
+    if (errorCode === 16 || record.error === "unsupported_hoster" || record.error === "hoster_unsupported") {
       return {
         status: "unsupported",
-        host: typeof record.host === "string" ? record.host : null,
+        host,
         link: originalLink,
         filename: null,
         filesize: null,
@@ -98,7 +95,7 @@ function normalizeCheckResponse(data, httpStatus, originalLink) {
     if (errorCode === 24 || record.error === "file_unavailable") {
       return {
         status: "file_unavailable",
-        host: typeof record.host === "string" ? record.host : null,
+        host,
         link: originalLink,
         filename: null,
         filesize: null,
@@ -107,6 +104,7 @@ function normalizeCheckResponse(data, httpStatus, originalLink) {
       };
     }
 
+    let message = typeof record.error === "string" ? record.error : "Provider returned an error.";
     if (errorCode === 13) {
       message = "Invalid host password provided.";
     } else if (errorCode === 17 || errorCode === 19) {
@@ -117,7 +115,7 @@ function normalizeCheckResponse(data, httpStatus, originalLink) {
 
     return {
       status: "error",
-      host: typeof record.host === "string" ? record.host : null,
+      host,
       link: originalLink,
       filename: null,
       filesize: null,
@@ -126,31 +124,58 @@ function normalizeCheckResponse(data, httpStatus, originalLink) {
     };
   }
 
-  const supportedNum = typeof record.supported === "number" ? record.supported : 0;
-  const isSupported = supportedNum === 1;
+  if ((data === null || data === undefined || data === "") && httpStatus === 200) {
+    return {
+      status: "unsupported",
+      host: fallbackHost,
+      link: originalLink,
+      filename: null,
+      filesize: null,
+      supported: false,
+      message: "Real-Debrid does not report this link as supported.",
+    };
+  }
 
-  const host = typeof record.host === "string" && record.host.trim()
-    ? record.host.trim()
-    : null;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    const record = data;
+    const supportedNum = typeof record.supported === "number" ? record.supported : 0;
+    const isSupported = supportedNum === 1;
 
-  const filename = typeof record.filename === "string" && record.filename.trim()
-    ? record.filename.trim()
-    : null;
+    const host = typeof record.host === "string" && record.host.trim()
+      ? record.host.trim()
+      : fallbackHost;
 
-  const rawFilesize = typeof record.filesize === "number" && !isNaN(record.filesize) && record.filesize > 0
-    ? Math.floor(record.filesize)
-    : null;
+    const filename = typeof record.filename === "string" && record.filename.trim()
+      ? record.filename.trim()
+      : null;
+
+    const rawFilesize = typeof record.filesize === "number" && !isNaN(record.filesize) && record.filesize > 0
+      ? Math.floor(record.filesize)
+      : null;
+
+    return {
+      status: isSupported ? "supported" : "unsupported",
+      host,
+      link: typeof record.link === "string" && record.link.trim() ? record.link.trim() : originalLink,
+      filename,
+      filesize: rawFilesize,
+      supported: isSupported,
+      message: isSupported
+        ? undefined
+        : "Real-Debrid does not report this link as supported.",
+    };
+  }
 
   return {
-    status: isSupported ? "supported" : "unsupported",
-    host,
-    link: typeof record.link === "string" && record.link.trim() ? record.link.trim() : originalLink,
-    filename,
-    filesize: rawFilesize,
-    supported: isSupported,
-    message: isSupported
-      ? undefined
-      : "Real-Debrid does not report this link as supported.",
+    status: "error",
+    host: fallbackHost,
+    link: originalLink,
+    filename: null,
+    filesize: null,
+    supported: false,
+    message: httpStatus !== 200
+      ? `Provider returned HTTP status ${httpStatus}.`
+      : "Provider returned an unrecognized response.",
   };
 }
 
@@ -364,6 +389,22 @@ test("Real-Debrid Link Validation, Formatting & Normalization", async (t) => {
     assert.match(result.message, /currently unavailable/);
   });
 
+  await t.test("Check Normalization: handles live Real-Debrid empty body responses as unsupported", () => {
+    // Live Real-Debrid behavior for unsupported hosts or uncataloged links: HTTP 200 with empty body
+    const resultFromNull = normalizeCheckResponse(null, 200, "https://example.com/file.zip");
+    assert.equal(resultFromNull.status, "unsupported");
+    assert.equal(resultFromNull.supported, false);
+    assert.equal(resultFromNull.host, "example.com");
+    assert.equal(resultFromNull.filename, null);
+    assert.equal(resultFromNull.filesize, null);
+    assert.match(resultFromNull.message, /not report this link as supported/);
+
+    const resultFromEmptyStr = normalizeCheckResponse("", 200, "https://google.com/test");
+    assert.equal(resultFromEmptyStr.status, "unsupported");
+    assert.equal(resultFromEmptyStr.supported, false);
+    assert.equal(resultFromEmptyStr.host, "google.com");
+  });
+
   await t.test("Check Normalization: handles provider error responses", () => {
     const unsupportedHosterErr = {
       error: "hoster_unsupported",
@@ -375,6 +416,21 @@ test("Real-Debrid Link Validation, Formatting & Normalization", async (t) => {
     assert.equal(result.status, "unsupported");
     assert.equal(result.supported, false);
     assert.equal(result.host, "customhost.io");
+
+    const fileUnavailableErr = {
+      error: "file_unavailable",
+      error_code: 24,
+    };
+    const resUnavailable = normalizeCheckResponse(fileUnavailableErr, 200, "https://rapidgator.net/file/dead");
+    assert.equal(resUnavailable.status, "file_unavailable");
+    assert.equal(resUnavailable.supported, false);
+  });
+
+  await t.test("Check Normalization: handles truly malformed or HTTP 500 error responses as error", () => {
+    const error500 = normalizeCheckResponse("<html>Internal Server Error</html>", 500, "https://rapidgator.net/file/1");
+    assert.equal(error500.status, "error");
+    assert.equal(error500.supported, false);
+    assert.match(error500.message, /HTTP status 500/);
   });
 
   await t.test("Unrestrict Normalization: normalizes single generated download link", () => {
