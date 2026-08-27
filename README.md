@@ -7,6 +7,7 @@ Daemon Dashboard is a modular personal dashboard and control plane for services,
 **Milestone 2A: Neon Auth Access Boundary** (Active / In Progress)
 
 - **Application Authentication (Implemented - Milestone 2A)**: Protected by Neon Auth (Managed Better Auth via `@neondatabase/auth`). Unauthenticated visitors are redirected to `/auth/sign-in`.
+- **Single-User Owner Bootstrap (Implemented - Milestone 2A)**: Initial account registration flow available at `/auth/sign-up` before permanently locking signups in Neon Console.
 - **Real-Debrid Module (Planned - Milestone 2B/3)**: Dedicated route and UI shell established (`/modules/real-debrid`). OAuth2 web flow integration will be introduced in Milestone 2B.
 - **Stremio Switch (Planned - Milestone 6)**: Operates as an independent application; integration assessment deferred.
 
@@ -39,18 +40,21 @@ Required variables:
 - `NEON_AUTH_COOKIE_SECRET` — 32+ character string for cookie signing (`openssl rand -base64 32`)
 - `NEXT_PUBLIC_NEON_AUTH_URL` — Public Auth base URL for client authentication requests
 
-### Development
+### Single-User Account Bootstrap & Lockout Procedure
 
-Install dependencies and start the local development server:
+1. **Start Dev Server**:
+   ```bash
+   npm run dev
+   ```
+2. **Create Owner Account**:
+   Navigate to [http://localhost:3000/auth/sign-up](http://localhost:3000/auth/sign-up) (or click `[ Initial Setup / Create Owner Account ]` from the sign-in screen). Enter your email and password to create the dashboard owner account.
+3. **Lock Future Registrations**:
+   In your [Neon Console](https://console.neon.tech):
+   - Go to **Auth** -> **Email & Password**.
+   - Enable **Disable sign-ups** (or via Neon API `PATCH` with `disable_sign_up: true`).
+   - This prevents any subsequent registrations while preserving your owner account login.
 
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Scripts
+### Development Scripts
 
 - `npm run dev` — Starts the Next.js development server
 - `npm run build` — Builds the application for production
@@ -60,6 +64,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Documentation
 
-- [ROADMAP.md](file://daemon-dashboard/ROADMAP.md) — Phased milestone plan and current progress.
-- [DECISIONS.md](file://daemon-dashboard/DECISIONS.md) — Architectural and technical decision records.
-- [GEMINI.md](file://daemon-dashboard/GEMINI.md) — Project guidelines and agent memory.
+- [ROADMAP.md](file:///Users/eden/Documents/Documents/code/personal-projects/nextjs/daemon-dashboard/ROADMAP.md) — Phased milestone plan and current progress.
+- [DECISIONS.md](file:///Users/eden/Documents/Documents/code/personal-projects/nextjs/daemon-dashboard/DECISIONS.md) — Architectural and technical decision records.
+- [GEMINI.md](file:///Users/eden/Documents/Documents/code/personal-projects/nextjs/daemon-dashboard/GEMINI.md) — Project guidelines and agent memory.

@@ -8,20 +8,21 @@ import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
 
-function SignInForm() {
+function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/";
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setErrorMessage("Please enter both email and password.");
+      setErrorMessage("Please provide an email and a password.");
       return;
     }
 
@@ -29,19 +30,32 @@ function SignInForm() {
     setErrorMessage(null);
 
     try {
-      const result = await authClient.signIn.email({
+      const result = await authClient.signUp.email({
         email,
         password,
+        name: name.trim() || "Owner",
       });
 
       if (result.error) {
-        setErrorMessage(result.error.message || "Authentication failed. Check credentials.");
+        if (
+          result.error.message?.toLowerCase().includes("disabled") ||
+          result.error.code === "SIGN_UP_DISABLED"
+        ) {
+          setErrorMessage(
+            "Account registration is disabled for this instance. Only existing accounts may sign in."
+          );
+        } else {
+          setErrorMessage(result.error.message || "Registration failed. Please check your details.");
+        }
       } else {
         router.push(redirectTo);
         router.refresh();
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An unexpected authentication error occurred.";
+      const message =
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred during account creation.";
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -53,17 +67,18 @@ function SignInForm() {
       <div className={styles.authPanel}>
         <div className={styles.panelHeader}>
           <span className={styles.headerTitle}>DAEMON DASHBOARD</span>
-          <span className="badge badge-warning">
-            <span className="status-dot status-dot-warning" />
-            RESTRICTED
+          <span className="badge badge-online">
+            <span className="status-dot status-dot-online" />
+            ONBOARDING
           </span>
         </div>
 
         <div className={styles.panelBody}>
           <div className={styles.statusNotice}>
-            <div className={styles.statusNoticeHeader}>ACCESS: RESTRICTED</div>
+            <div className={styles.statusNoticeHeader}>INITIAL OWNER BOOTSTRAP</div>
             <p className={styles.statusNoticeText}>
-              Authentication required. Single-user access boundary managed via Neon Auth.
+              Create the primary dashboard owner account. After registration,
+              disable sign-ups in your Neon project settings to lock access.
             </p>
           </div>
 
@@ -71,10 +86,24 @@ function SignInForm() {
             <div className={styles.errorBanner}>{errorMessage}</div>
           )}
 
-          <form onSubmit={handleSignIn} className={styles.form}>
+          <form onSubmit={handleSignUp} className={styles.form}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="name" className={styles.label}>
+                NAME / IDENTIFIER (OPTIONAL)
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Owner"
+                className={styles.input}
+              />
+            </div>
+
             <div className={styles.inputGroup}>
               <label htmlFor="email" className={styles.label}>
-                USER / EMAIL
+                OWNER EMAIL
               </label>
               <input
                 id="email"
@@ -83,7 +112,7 @@ function SignInForm() {
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="operator@daemon.local"
+                placeholder="owner@daemon.local"
                 className={styles.input}
               />
             </div>
@@ -96,7 +125,7 @@ function SignInForm() {
                 id="password"
                 type="password"
                 required
-                autoComplete="current-password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
@@ -109,27 +138,27 @@ function SignInForm() {
               disabled={isLoading}
               className={styles.submitBtn}
             >
-              {isLoading ? "AUTHENTICATING..." : "AUTHENTICATE →"}
+              {isLoading ? "CREATING ACCOUNT..." : "CREATE OWNER ACCOUNT →"}
             </button>
           </form>
 
           <div className={styles.actionLinks}>
-            <Link href="/auth/sign-up" className={styles.link}>
-              [ Initial Setup / Create Owner Account ]
+            <Link href="/auth/sign-in" className={styles.link}>
+              ← Return to Sign In
             </Link>
           </div>
         </div>
 
         <div className={styles.panelFooter}>
-          <span>NEON AUTH : MANAGED BETTER AUTH</span>
-          <span>MILESTONE 2A</span>
+          <span>NEON AUTH : BOOTSTRAP</span>
+          <span>SINGLE-USER</span>
         </div>
       </div>
     </div>
   );
 }
 
-export default function SignInPage() {
+export default function SignUpPage() {
   return (
     <Suspense
       fallback={
@@ -140,14 +169,14 @@ export default function SignInPage() {
             </div>
             <div className={styles.panelBody}>
               <div className="mono" style={{ color: "var(--text-muted)" }}>
-                LOADING ACCESS CONTROL...
+                LOADING ONBOARDING...
               </div>
             </div>
           </div>
         </div>
       }
     >
-      <SignInForm />
+      <SignUpForm />
     </Suspense>
   );
 }
