@@ -740,3 +740,311 @@
   border-top: 1px solid rgba(46, 160, 67, 0.3);
   padding-top: 10px;
 }
+
+/* Magnet / Torrent Workflow Tool Styles (Milestone 5) */
+.torrentToolContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activeTorrentCard {
+  border: 1px solid var(--border-default);
+  background-color: #0d1117;
+  padding: 20px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.torrentCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-muted);
+  padding-bottom: 14px;
+}
+
+.torrentHeaderTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 250px;
+}
+
+.torrentCardLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.torrentFilename {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.torrentHeaderBadges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.progressBarWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-muted);
+  padding: 14px 16px;
+  border-radius: var(--radius-xs);
+}
+
+.progressBarTrack {
+  width: 100%;
+  height: 10px;
+  background-color: #21262d;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: #1f6feb;
+  background-image: linear-gradient(90deg, #1f6feb, #388bfd);
+  transition: width 0.3s ease;
+}
+
+.progressBarFillComplete {
+  background-color: var(--status-online-text);
+  background-image: linear-gradient(90deg, #238636, #2ea043);
+}
+
+.progressMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.torrentMetricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.stateNoticeCard {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  padding: 16px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stateNoticeText {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* File Selection UI */
+.fileSelectionSection {
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-muted);
+  padding: 16px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fileSelectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-muted);
+  padding-bottom: 10px;
+}
+
+.fileSelectionTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fileSelectionTitle {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.fileSelectionCount {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #58a6ff;
+}
+
+.fileSelectionQuickActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fileQuickBtn {
+  font-size: 10px;
+  padding: 4px 8px;
+  background-color: #21262d;
+  border-color: #30363d;
+}
+
+.fileListContainer {
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  padding: 6px;
+  border-radius: var(--radius-xs);
+}
+
+.fileItemRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.1s ease;
+}
+
+.fileItemRow:hover {
+  background-color: #161b22;
+}
+
+.fileItemRowSelected {
+  background-color: #161b22;
+}
+
+.fileCheckbox {
+  cursor: pointer;
+  accent-color: #1f6feb;
+}
+
+.filePathText {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSizeBytes {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fileSelectionFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+
+.startDownloadBtn {
+  min-width: 220px;
+}
+
+/* Completed Section */
+.completedSection {
+  background-color: #041b11;
+  border: 1px solid var(--status-online-border);
+  padding: 16px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.completedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.completedTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.completedTitle {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--status-online-text);
+  text-transform: uppercase;
+}
+
+.torrentCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border-muted);
+  padding-top: 14px;
+}
+
+.pollingIndicatorContainer {
+  display: flex;
+  align-items: center;
+}
+
+.livePollingBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: #58a6ff;
+  background-color: #0d1117;
+  border: 1px solid #1f6feb;
+  padding: 4px 8px;
+  border-radius: 2px;
+}
+
+.torrentFooterButtons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}

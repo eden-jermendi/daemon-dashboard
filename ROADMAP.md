@@ -40,9 +40,15 @@ This roadmap tracks the development milestones of **Daemon Dashboard**. Only com
   - Interactive utilitarian Link Tool in `/modules/real-debrid` with status indicators, byte formatting, direct URL copy, and safe external open.
   - Comprehensive automated test suite for URL validation, byte formatting, check/unrestrict normalization, and error handling.
 
-- [ ] **Milestone 5: Magnet / Torrent Workflow**
-  - Real-Debrid torrent ingestion, progress tracking, and file selection.
-  - Torrent download/stream orchestrator within the Real-Debrid module.
+- [x] **Milestone 5: Magnet / Torrent Workflow**
+  - BitTorrent magnet URI validation (BTIH/BTMH info hashes) rejecting malformed inputs locally.
+  - Server-side integration with Real-Debrid `POST /torrents/addMagnet`, `GET /torrents/info/{id}`, `POST /torrents/selectFiles/{id}`, and `DELETE /torrents/delete/{id}`.
+  - Application-owned normalized torrent model covering `magnet_conversion`, `waiting_files_selection`, `queued`, `downloading`, `processing`, `downloaded`, and terminal error states.
+  - Interactive file selection tree with checkboxes, byte formatting, and select all / clear actions.
+  - Serverless-friendly bounded polling (3.5s) updating transfer progress, speed, and active seeders without long-lived server connections.
+  - Direct integration with Milestone 4 link unrestriction machinery for completed torrent download links.
+  - Torrent removal and reset workflow.
+  - Comprehensive unit test suite covering validation, normalization, status mapping, file serialization, and error handling.
 
 - [ ] **Milestone 6: Deliberate Stremio Switch Integration Assessment**
   - Evaluate Stremio Switch multi-profile capabilities for direct integration or unified control.

@@ -63,3 +63,7 @@ This document records the foundational architectural decisions established for *
 ### 13. Direct Download URL Control Plane Hand-off
 - **Decision**: Daemon Dashboard operates strictly as the control plane for URL verification and link unrestriction. Generated direct download URLs are returned directly to the authenticated client for direct browser download, external opening, or clipboard copy. Daemon never proxies large file bytes, stream chunks, or data plane traffic.
 - **Rationale**: Prevents bandwidth exhaustion, latency bottlenecks, memory spikes, and proxy timeout failures on serverless/hosted infrastructure.
+
+### 14. Real-Debrid as Single Source of Truth for Torrent State
+- **Decision**: Keep torrent job state and active lifecycle strictly on Real-Debrid. Do not duplicate active or completed torrent records into a PostgreSQL database table.
+- **Rationale**: Real-Debrid is the authoritative state machine for metadata resolution, DHT peer swarms, caching, and link generation. Persisting transient torrent jobs in PostgreSQL adds unnecessary schema complexity, synchronization edge cases, and state divergence risks without providing operational value for a single-user control plane.

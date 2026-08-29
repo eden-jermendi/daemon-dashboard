@@ -139,3 +139,80 @@ export interface RealDebridUnrestrictLinkResponse {
   error?: string;
   error_code?: number;
 }
+
+export type RealDebridTorrentStatus =
+  | "magnet_conversion"
+  | "waiting_files_selection"
+  | "queued"
+  | "downloading"
+  | "downloaded"
+  | "processing"
+  | "error"
+  | "virus"
+  | "dead";
+
+export interface RealDebridTorrentFile {
+  id: number;
+  path: string;
+  bytes: number;
+  selected: boolean;
+}
+
+export interface RealDebridTorrentInfo {
+  id: string;
+  filename: string;
+  originalFilename: string;
+  hash: string;
+  bytes: number;
+  originalBytes: number;
+  host: string;
+  progress: number;
+  status: RealDebridTorrentStatus;
+  rawStatus: string;
+  addedDate: string | null;
+  endedDate: string | null;
+  speed: number | null;
+  seeders: number | null;
+  files: RealDebridTorrentFile[];
+  links: string[];
+}
+
+export interface RealDebridAddMagnetResult {
+  id: string;
+  uri: string;
+}
+
+export interface RealDebridRawTorrentFile {
+  id?: number | string;
+  path?: string;
+  bytes?: number;
+  selected?: number | boolean;
+}
+
+export interface RealDebridRawTorrentInfo {
+  id?: string;
+  filename?: string;
+  original_filename?: string;
+  hash?: string;
+  bytes?: number;
+  original_bytes?: number;
+  host?: string;
+  split?: number;
+  progress?: number;
+  status?: string;
+  added?: string;
+  ended?: string;
+  speed?: number;
+  seeders?: number;
+  files?: RealDebridRawTorrentFile[];
+  links?: string[];
+  error?: string;
+  error_code?: number;
+}
+
+export interface RealDebridRawAddMagnetResponse {
+  id?: string;
+  uri?: string;
+  error?: string;
+  error_code?: number;
+}

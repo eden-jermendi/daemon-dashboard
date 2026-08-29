@@ -9,6 +9,7 @@ import {
 } from "@/features/real-debrid/server/account";
 import { RealDebridConnectClient } from "./real-debrid-connect-client";
 import { RealDebridLinkTool } from "./real-debrid-link-tool";
+import { RealDebridTorrentTool } from "./real-debrid-torrent-tool";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -59,6 +60,7 @@ export default async function RealDebridModulePage({
   }
 
   const isConnected = connectionStatus.isConnected;
+  const isPremium = accountResult.status === "connected" && accountResult.account.isPremium;
 
   return (
     <div className={styles.mainLayout}>
@@ -113,7 +115,7 @@ export default async function RealDebridModulePage({
               <div className={styles.statusCardConnected}>
                 <div className={styles.statusCardHeaderConnected}>STATUS: OPERATIONAL</div>
                 <div className={styles.statusCardState}>
-                  {accountResult.status === "connected" && accountResult.account.isPremium
+                  {isPremium
                     ? "REAL-DEBRID PREMIUM ACTIVE"
                     : "REAL-DEBRID CONNECTED"}
                 </div>
@@ -200,7 +202,21 @@ export default async function RealDebridModulePage({
               </div>
               <RealDebridLinkTool
                 isConnected={isConnected}
-                isPremium={accountResult.status === "connected" && accountResult.account.isPremium}
+                isPremium={isPremium}
+              />
+            </div>
+
+            {/* Interactive Magnet & Torrent Pipeline Tool (Milestone 5) */}
+            <div className={styles.section}>
+              <div className={styles.sectionHeaderRow}>
+                <h2 className={styles.sectionTitle}>MAGNET / TORRENT PIPELINE</h2>
+                <span className="badge badge-online" style={{ fontSize: "10px", padding: "2px 6px" }}>
+                  WORKFLOW ACTIVE
+                </span>
+              </div>
+              <RealDebridTorrentTool
+                isConnected={isConnected}
+                isPremium={isPremium}
               />
             </div>
 
@@ -251,7 +267,15 @@ export default async function RealDebridModulePage({
                 </div>
                 <div className={styles.infoBox}>
                   <div className={styles.infoBoxLabel}>Torrent Pipeline (Milestone 5)</div>
-                  <div className={styles.infoBoxValue}>Magnet Ingestion & Monitoring</div>
+                  <div className={styles.infoBoxValue}>
+                    <span className="badge badge-online" style={{ fontSize: "10px", padding: "2px 6px" }}>
+                      ACTIVE
+                    </span>
+                  </div>
+                </div>
+                <div className={styles.infoBox}>
+                  <div className={styles.infoBoxLabel}>Stremio Switch (Milestone 6)</div>
+                  <div className={styles.infoBoxValue}>Integration Assessment (Planned)</div>
                 </div>
               </div>
             </div>
@@ -259,7 +283,7 @@ export default async function RealDebridModulePage({
 
           <div className={styles.panelFooter}>
             <span className="mono" style={{ color: "var(--text-muted)" }}>
-              MILESTONE 4 : LINK CHECK & UNRESTRICTION ACTIVE
+              MILESTONE 5 : MAGNET & TORRENT WORKFLOW ACTIVE
             </span>
             <Link href="/" className="system-btn">
               RETURN TO DASHBOARD
