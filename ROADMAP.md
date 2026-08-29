@@ -51,9 +51,11 @@ This roadmap tracks the development milestones of **Daemon Dashboard**. Only com
   - Comprehensive unit test suite covering validation, normalization, status mapping, file serialization, and error handling.
 
 - [ ] **Milestone 6: Deliberate Stremio Switch Integration Assessment**
-  - Evaluate Stremio Switch multi-profile capabilities for direct integration or unified control.
-  - Advice user to, with a new agent, assess the state of the Stremio Switch project and report back findings.
-  - Based on findings,plan and implement integration with Stremio Switch, or advice user to continue using Stremio Switch independently.
+  - [x] **Milestone 6A: Torrentio Domain Engine Integration**
+    - Pure TypeScript domain engine ported (`src/features/stremio-switch/domain/torrentio/`).
+    - Full behavioral test suite ported and passing (`tests/torrentio.test.mjs`).
+  - [ ] **Milestone 6B+: Stremio Switch Persistence, Dynamic Credentials & Proxy Integration**
+
   
 - [ ] **Milestone 7: Modular Design Pattern Refactoring**
   - Analyze current codebase to identify opportunities for modularity improvements.
