@@ -67,3 +67,8 @@ This document records the foundational architectural decisions established for *
 ### 14. Real-Debrid as Single Source of Truth for Torrent State
 - **Decision**: Keep torrent job state and active lifecycle strictly on Real-Debrid. Do not duplicate active or completed torrent records into a PostgreSQL database table.
 - **Rationale**: Real-Debrid is the authoritative state machine for metadata resolution, DHT peer swarms, caching, and link generation. Persisting transient torrent jobs in PostgreSQL adds unnecessary schema complexity, synchronization edge cases, and state divergence risks without providing operational value for a single-user control plane.
+
+### 15. Stremio Switch Unified Real-Debrid OAuth & Dynamic Credential Injection
+- **Decision**: Stremio Switch integration in Daemon Dashboard reuses the existing Real-Debrid OAuth connection (`getValidRealDebridAccessToken(userId)`). Future Stremio provider persistence will store only public addon configuration, ownership, and proxy capability metadata—with zero duplicate Real-Debrid secret persistence. Upstream Torrentio URLs are dynamically constructed at request time with the user's fresh OAuth access token.
+- **Rationale**: Live interoperability testing in Milestone 6B proved conclusively that upstream Torrentio accepts Real-Debrid OAuth Bearer access tokens directly in `realdebrid=<token>` and resolves streams directly to Real-Debrid CDN endpoints (`*.download.real-debrid.com`). Reusing the existing OAuth lifecycle avoids duplicate credential storage, eliminates manual API key copying, leverages automatic token refresh, and preserves strict single-credential management.
+

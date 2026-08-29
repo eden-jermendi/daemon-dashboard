@@ -54,7 +54,13 @@ This roadmap tracks the development milestones of **Daemon Dashboard**. Only com
   - [x] **Milestone 6A: Torrentio Domain Engine Integration**
     - Pure TypeScript domain engine ported (`src/features/stremio-switch/domain/torrentio/`).
     - Full behavioral test suite ported and passing (`tests/torrentio.test.mjs`).
-  - [ ] **Milestone 6B+: Stremio Switch Persistence, Dynamic Credentials & Proxy Integration**
+  - [x] **Milestone 6B: Torrentio ↔ Real-Debrid OAuth Compatibility & Credential Architecture**
+    - Proved live upstream compatibility of Real-Debrid OAuth access tokens in `realdebrid=<token>` resolver requests with Real-Debrid CDN redirects.
+    - Verified negative control behavior with invalid tokens.
+    - Settled unified credential architecture (zero duplicate secret storage, dynamic request-time injection).
+    - Established domain helper and server-only credential bridge (`src/features/stremio-switch/server/real-debrid-credential.ts`).
+  - [ ] **Milestone 6C+: Stremio Switch Persistence & Addon Configuration Management**
+  - [ ] **Milestone 6D+: Stremio Public Capability Proxy & Stream Resolver Routing**
 
   
 - [ ] **Milestone 7: Modular Design Pattern Refactoring**

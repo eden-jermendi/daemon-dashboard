@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   parseTorrentioUrl,
   serializeTorrentioConfig,
+  serializeTorrentioConfigWithCredential,
   serializeTorrentioPublicConfig,
   toRedactedTorrentioConfig,
   TorrentioConfigError,
@@ -549,6 +550,49 @@ describe("Torrentio Configuration Parser & Serializer", () => {
       assert.throws(
         () => serializeTorrentioConfig(malformedConfig),
         (err) => err instanceof TorrentioConfigError && err.code === "INVALID_OPTION_VALUE"
+      );
+    });
+  });
+
+  describe("Runtime Credential Injection Serialization", () => {
+    it("serializes public config with RealDebridCredential object canonically", () => {
+      const publicConfig = {
+        providers: ["yts", "1337x"],
+        sort: "seeders",
+      };
+      const credential = {
+        kind: "realdebrid",
+        secret: SYNTHETIC_SECRET,
+      };
+
+      const serialized = serializeTorrentioConfigWithCredential(publicConfig, credential);
+      assert.equal(serialized, `providers=yts,1337x|sort=seeders|realdebrid=${SYNTHETIC_SECRET}`);
+    });
+
+    it("serializes public config with raw token string canonically", () => {
+      const publicConfig = {
+        providers: ["yts"],
+        limit: 20,
+      };
+
+      const serialized = serializeTorrentioConfigWithCredential(publicConfig, SYNTHETIC_SECRET);
+      assert.equal(serialized, `providers=yts|limit=20|realdebrid=${SYNTHETIC_SECRET}`);
+    });
+
+    it("serializes empty public config with token string", () => {
+      const serialized = serializeTorrentioConfigWithCredential({}, SYNTHETIC_SECRET);
+      assert.equal(serialized, `realdebrid=${SYNTHETIC_SECRET}`);
+    });
+
+    it("rejects invalid or malformed runtime credentials", () => {
+      assert.throws(
+        () => serializeTorrentioConfigWithCredential({}, "too_short"),
+        (err) => err instanceof TorrentioConfigError && err.code === "INVALID_CREDENTIAL"
+      );
+
+      assert.throws(
+        () => serializeTorrentioConfigWithCredential({}, "injected|token=value"),
+        (err) => err instanceof TorrentioConfigError && err.code === "INVALID_CREDENTIAL"
       );
     });
   });

@@ -1,6 +1,7 @@
 import { REAL_DEBRID_TOKEN_REGEX } from './constants.ts';
 import { TorrentioConfigError } from './errors.ts';
 import type {
+  RealDebridCredential,
   RedactedTorrentioConfig,
   TorrentioPublicConfig,
   ValidatedTorrentioConfig,
@@ -90,6 +91,25 @@ export function serializeTorrentioConfig(config: ValidatedTorrentioConfig): stri
   pairs.push(['realdebrid', config.credential.secret]);
 
   return pairs.map(([k, v]) => `${k}=${v}`).join('|');
+}
+
+/**
+ * Reconstructs the canonical Torrentio configuration segment by combining a public
+ * configuration with a runtime Real-Debrid credential or raw token.
+ */
+export function serializeTorrentioConfigWithCredential(
+  publicConfig: TorrentioPublicConfig,
+  credential: RealDebridCredential | string
+): string {
+  const secret = typeof credential === 'string' ? credential : credential?.secret;
+  return serializeTorrentioConfig({
+    provider: 'torrentio',
+    publicConfig: publicConfig || {},
+    credential: {
+      kind: 'realdebrid',
+      secret,
+    },
+  });
 }
 
 /**
