@@ -52,3 +52,12 @@ This roadmap tracks the development milestones of **Daemon Dashboard**. Only com
 
 - [ ] **Milestone 6: Deliberate Stremio Switch Integration Assessment**
   - Evaluate Stremio Switch multi-profile capabilities for direct integration or unified control.
+  - Advice user to, with a new agent, assess the state of the Stremio Switch project and report back findings.
+  - Based on findings,plan and implement integration with Stremio Switch, or advice user to continue using Stremio Switch independently.
+  
+- [ ] **Milestone 7: Modular Design Pattern Refactoring**
+  - Analyze current codebase to identify opportunities for modularity improvements.
+  - Design a modular architecture that separates concerns and improves maintainability.
+  - Improve with dogfooding and agent-driven iterative refactoring.
+  
+  
