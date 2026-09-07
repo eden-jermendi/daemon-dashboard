@@ -1,13 +1,14 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { auth } from "@/lib/auth/server";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { getRealDebridConnectionStatus } from "@/features/real-debrid/server/connection";
-import {
-  getRealDebridAccount,
-  formatExpirationDate,
-  formatPremiumRemaining,
-} from "@/features/real-debrid/server/account";
+import { formatExpirationDate } from "@/features/real-debrid/server/account";
 import { RealDebridConnectClient } from "./real-debrid-connect-client";
+import {
+  RealDebridAccountTelemetry,
+  RealDebridAccountSkeleton,
+} from "./real-debrid-account-telemetry";
 import { RealDebridLinkTool } from "./real-debrid-link-tool";
 import { RealDebridTorrentTool } from "./real-debrid-torrent-tool";
 import styles from "./page.module.css";
@@ -27,10 +28,7 @@ export default async function RealDebridModulePage({
   const userEmail = session?.user?.email ?? null;
   const userId = session?.user?.id ?? null;
 
-  const [connectionStatus, accountResult] = await Promise.all([
-    getRealDebridConnectionStatus(userId),
-    getRealDebridAccount(userId),
-  ]);
+  const connectionStatus = await getRealDebridConnectionStatus(userId);
 
   const successParam = typeof params.success === "string" ? params.success : null;
   const errorParam = typeof params.error === "string" ? params.error : null;
@@ -52,15 +50,9 @@ export default async function RealDebridModulePage({
       type: "error",
       text: "DISCONNECT WARNING: Error occurred while clearing provider credentials.",
     };
-  } else if (accountResult.status === "error") {
-    bannerMessage = {
-      type: "warning",
-      text: `REAL-DEBRID API WARNING: ${accountResult.message || "Provider temporarily unavailable."}`,
-    };
   }
 
   const isConnected = connectionStatus.isConnected;
-  const isPremium = accountResult.status === "connected" && accountResult.account.isPremium;
 
   return (
     <div className={styles.mainLayout}>
@@ -115,9 +107,7 @@ export default async function RealDebridModulePage({
               <div className={styles.statusCardConnected}>
                 <div className={styles.statusCardHeaderConnected}>STATUS: OPERATIONAL</div>
                 <div className={styles.statusCardState}>
-                  {isPremium
-                    ? "REAL-DEBRID PREMIUM ACTIVE"
-                    : "REAL-DEBRID CONNECTED"}
+                  REAL-DEBRID CONNECTED
                 </div>
                 <p className={styles.statusCardText}>
                   Daemon Dashboard possesses a valid, encrypted OAuth2 authorization for your Real-Debrid account.
@@ -143,53 +133,11 @@ export default async function RealDebridModulePage({
               <RealDebridConnectClient />
             )}
 
-            {/* Live Account Status (Milestone 3) */}
-            {accountResult.status === "connected" && (
-              <div className={styles.section}>
-                <h2 className={styles.sectionTitle}>ACCOUNT STATUS & SUBSCRIPTION</h2>
-                <div className={styles.infoGrid}>
-                  <div className={styles.infoBox}>
-                    <div className={styles.infoBoxLabel}>Username</div>
-                    <div className={styles.infoBoxValue}>
-                      {accountResult.account.username}
-                    </div>
-                  </div>
-                  <div className={styles.infoBox}>
-                    <div className={styles.infoBoxLabel}>Account Tier</div>
-                    <div className={styles.infoBoxValue}>
-                      {accountResult.account.isPremium ? (
-                        <span className="badge badge-online" style={{ fontSize: "10px", padding: "2px 6px" }}>
-                          PREMIUM
-                        </span>
-                      ) : (
-                        <span className="badge badge-warning" style={{ fontSize: "10px", padding: "2px 6px" }}>
-                          FREE
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className={styles.infoBox}>
-                    <div className={styles.infoBoxLabel}>Expiration Date</div>
-                    <div className={styles.infoBoxValue}>
-                      {formatExpirationDate(accountResult.account.expiration, "full")}
-                    </div>
-                  </div>
-                  <div className={styles.infoBox}>
-                    <div className={styles.infoBoxLabel}>Premium Remaining</div>
-                    <div className={styles.infoBoxValue}>
-                      <span className={accountResult.account.isPremium ? styles.infoBoxValueHighlight : ""}>
-                        {formatPremiumRemaining(accountResult.account.premiumRemainingSeconds)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.infoBox}>
-                    <div className={styles.infoBoxLabel}>Fidelity Points</div>
-                    <div className={styles.infoBoxValue}>
-                      {accountResult.account.fidelityPoints.toLocaleString()} PTS
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Live Account Status (Milestone 3) - Streaming via React Suspense */}
+            {isConnected && userId && (
+              <Suspense fallback={<RealDebridAccountSkeleton />}>
+                <RealDebridAccountTelemetry userId={userId} />
+              </Suspense>
             )}
 
             {/* Interactive Link Tool (Milestone 4) */}
@@ -202,7 +150,7 @@ export default async function RealDebridModulePage({
               </div>
               <RealDebridLinkTool
                 isConnected={isConnected}
-                isPremium={isPremium}
+                isPremium={isConnected}
               />
             </div>
 
@@ -216,7 +164,7 @@ export default async function RealDebridModulePage({
               </div>
               <RealDebridTorrentTool
                 isConnected={isConnected}
-                isPremium={isPremium}
+                isPremium={isConnected}
               />
             </div>
 

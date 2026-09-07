@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getValidRealDebridAccessToken } from "./connection";
 import { RealDebridAccount, RealDebridAccountResult } from "./types";
 
@@ -111,10 +112,10 @@ export function formatExpirationDate(
 /**
  * Obtains live Real-Debrid account status for the given Daemon user.
  * Automatically handles token refresh via getValidRealDebridAccessToken.
+ * Wrapped in React cache() for request-scoped deduplication.
  */
-export async function getRealDebridAccount(
-  userId: string | null | undefined
-): Promise<RealDebridAccountResult> {
+export const getRealDebridAccount = cache(
+  async (userId: string | null | undefined): Promise<RealDebridAccountResult> => {
   if (!userId) {
     return { status: "disconnected" };
   }
@@ -196,4 +197,4 @@ export async function getRealDebridAccount(
       message: "Malformed response received from provider.",
     };
   }
-}
+});

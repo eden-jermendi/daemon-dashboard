@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getDb, isDbConfigured } from "@/lib/db";
 import { encryptToken, decryptToken } from "./encryption";
 import {
@@ -16,10 +17,10 @@ const REFRESH_SAFETY_MARGIN_MS = 5 * 60 * 1000; // 5 minutes safety window
 
 /**
  * Retrieves the raw provider connection record from Neon Postgres for a user.
+ * Wrapped in React cache() for request-scoped memoization to eliminate duplicate DB round-trips.
  */
-export async function getRealDebridConnection(
-  userId: string
-): Promise<ProviderConnectionRecord | null> {
+export const getRealDebridConnection = cache(
+  async (userId: string): Promise<ProviderConnectionRecord | null> => {
   if (!isDbConfigured) {
     return null;
   }
@@ -48,7 +49,7 @@ export async function getRealDebridConnection(
   }
 
   return rows[0] as unknown as ProviderConnectionRecord;
-}
+});
 
 /**
  * Checks connection status without decrypting tokens.
