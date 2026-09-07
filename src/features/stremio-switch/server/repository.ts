@@ -22,7 +22,8 @@ export async function getUserStremioConfigs(
       user_id,
       provider_name,
       public_config,
-      proxy_id,
+      capability_hash,
+      capability_hint,
       created_at,
       updated_at
     FROM stremio_provider_configs
@@ -51,7 +52,8 @@ export async function getUserStremioConfig(
       user_id,
       provider_name,
       public_config,
-      proxy_id,
+      capability_hash,
+      capability_hint,
       created_at,
       updated_at
     FROM stremio_provider_configs
@@ -84,7 +86,8 @@ export async function getUserStremioConfigById(
       user_id,
       provider_name,
       public_config,
-      proxy_id,
+      capability_hash,
+      capability_hint,
       created_at,
       updated_at
     FROM stremio_provider_configs
@@ -101,7 +104,7 @@ export async function getUserStremioConfigById(
 
 /**
  * Upserts a Stremio provider configuration for a user.
- * Preserves the existing unguessable proxy_id on updates to avoid breaking installed Stremio add-ons.
+ * Preserves the existing capability_hash and capability_hint on updates.
  */
 export async function upsertStremioConfig(
   input: SaveStremioProviderConfigInput
@@ -133,7 +136,8 @@ export async function upsertStremioConfig(
       user_id,
       provider_name,
       public_config,
-      proxy_id,
+      capability_hash,
+      capability_hint,
       created_at,
       updated_at;
   `;
@@ -163,13 +167,13 @@ export async function deleteUserStremioConfig(
 }
 
 /**
- * Internal capability lookup by proxy_id for the future public proxy (Milestone 6D).
- * Kept strictly server-internal in Milestone 6C.
+ * Constant-time indexed lookup resolving owner and configuration by SHA-256 capability hash.
+ * Revoked configurations (capability_hash IS NULL) will return null.
  */
-export async function getStremioConfigByProxyIdInternal(
-  proxyId: string
+export async function getStremioConfigByCapabilityHash(
+  capabilityHash: string
 ): Promise<StremioProviderConfigRecord | null> {
-  if (!isDbConfigured || !proxyId) {
+  if (!isDbConfigured || !capabilityHash) {
     return null;
   }
 
@@ -180,11 +184,12 @@ export async function getStremioConfigByProxyIdInternal(
       user_id,
       provider_name,
       public_config,
-      proxy_id,
+      capability_hash,
+      capability_hint,
       created_at,
       updated_at
     FROM stremio_provider_configs
-    WHERE proxy_id = ${proxyId}
+    WHERE capability_hash = ${capabilityHash}
     LIMIT 1;
   `;
 
@@ -193,4 +198,32 @@ export async function getStremioConfigByProxyIdInternal(
   }
 
   return rows[0] as unknown as StremioProviderConfigRecord;
+}
+
+/**
+ * Atomically updates a configuration's capability hash and display hint.
+ * Passing null for capabilityHash and capabilityHint revokes the capability immediately.
+ */
+export async function updateStremioCapabilityHash(
+  userId: string,
+  id: string,
+  capabilityHash: string | null,
+  capabilityHint: string | null
+): Promise<boolean> {
+  if (!isDbConfigured || !userId || !id) {
+    return false;
+  }
+
+  const sql = getDb();
+  const rows = await sql`
+    UPDATE stremio_provider_configs
+    SET 
+      capability_hash = ${capabilityHash},
+      capability_hint = ${capabilityHint},
+      updated_at = NOW()
+    WHERE id = ${id} AND user_id = ${userId}
+    RETURNING id;
+  `;
+
+  return rows.length > 0;
 }

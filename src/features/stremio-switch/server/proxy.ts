@@ -3,7 +3,7 @@ import { TORRENTIO_ORIGIN } from "../domain/torrentio/constants.ts";
 import { serializeTorrentioConfigWithCredential } from "../domain/torrentio/serializer.ts";
 import type { TorrentioPublicConfig } from "../domain/torrentio/types.ts";
 import { getTorrentioRealDebridCredential } from "./real-debrid-credential.ts";
-import { findConfigByProxyIdInternal } from "./service.ts";
+import { findConfigByCapabilityToken } from "./service.ts";
 
 const UPSTREAM_REQUEST_TIMEOUT_MS = 10_000;
 
@@ -14,7 +14,11 @@ export const CORS_HEADERS = {
 };
 
 import {
+  formatCapabilityHint,
+  generateStremioCapability,
+  hashStremioCapability,
   isAllowedCdnHost,
+  isValidCapabilityToken,
   isValidProxyId,
   parseTorrentioResolverUrl,
   reconstructTorrentioResolverUrl,
@@ -27,7 +31,11 @@ import {
 } from "../domain/torrentio/index.ts";
 
 export {
+  formatCapabilityHint,
+  generateStremioCapability,
+  hashStremioCapability,
   isAllowedCdnHost,
+  isValidCapabilityToken,
   isValidProxyId,
   parseTorrentioResolverUrl,
   reconstructTorrentioResolverUrl,
@@ -54,29 +62,30 @@ export class ProxyError extends Error {
 
 export interface ProxyDependencies {
   findConfig?: (
-    proxyId: string
+    capability: string
   ) => Promise<{ user_id: string; public_config: TorrentioPublicConfig } | null>;
   getCredential?: (userId: string) => Promise<{ secret: string } | null>;
   fetchFn?: typeof fetch;
 }
 
 /**
- * Resolves a capability proxyId to its database configuration record and fresh RD OAuth token.
+ * Resolves a capability token to its database configuration record and fresh RD OAuth token.
+ * Rejects invalid format or unknown capability with generic 404.
  */
 async function resolveCapabilityAndCredential(
-  proxyId: string,
+  capability: string,
   deps?: ProxyDependencies
 ): Promise<{
   config: { user_id: string; public_config: TorrentioPublicConfig };
   token: string;
 }> {
-  if (!isValidProxyId(proxyId)) {
+  if (!isValidCapabilityToken(capability)) {
     throw new ProxyError(404, "Unknown addon capability.");
   }
 
   const config = deps?.findConfig
-    ? await deps.findConfig(proxyId)
-    : await findConfigByProxyIdInternal(proxyId);
+    ? await deps.findConfig(capability)
+    : await findConfigByCapabilityToken(capability);
 
   if (!config) {
     throw new ProxyError(404, "Unknown addon capability.");
@@ -94,13 +103,13 @@ async function resolveCapabilityAndCredential(
 }
 
 /**
- * Handles GET /api/stremio/[proxyId]/manifest.json
+ * Handles GET /api/stremio/[capability]/manifest.json
  */
 export async function handleManifestRequest(
-  proxyId: string,
+  capability: string,
   deps?: ProxyDependencies
 ): Promise<Response> {
-  const { config, token } = await resolveCapabilityAndCredential(proxyId, deps);
+  const { config, token } = await resolveCapabilityAndCredential(capability, deps);
 
   const segment = serializeTorrentioConfigWithCredential(
     config.public_config,
@@ -117,9 +126,8 @@ export async function handleManifestRequest(
       signal: AbortSignal.timeout(UPSTREAM_REQUEST_TIMEOUT_MS),
     });
   } catch (err) {
-    console.error(
-      `[Stremio Proxy] Upstream manifest fetch failed for capability: ${proxyId}`
-    );
+    // Audit: Never log the capability token or complete addon URL
+    console.error("[Stremio Proxy] Upstream manifest fetch failed.");
     throw new ProxyError(
       502,
       "Torrentio temporarily unavailable: " + sanitizeErrorMessage(err, token)
@@ -149,20 +157,22 @@ const SUPPORTED_STREAM_TYPES = new Set(["movie", "series", "anime", "other"]);
 const SAFE_ID_REGEX = /^[a-zA-Z0-9:_-]{1,128}$/;
 
 /**
- * Handles GET /api/stremio/[proxyId]/stream/[type]/[id]
+ * Handles GET /api/stremio/[capability]/stream/[type]/[id]
  */
 export async function handleStreamRequest(
   params: {
-    proxyId: string;
+    capability?: string;
+    proxyId?: string;
     type: string;
     idParam: string;
     baseUrl: string;
   },
   deps?: ProxyDependencies
 ): Promise<Response> {
-  const { proxyId, type, idParam, baseUrl } = params;
+  const capability = params.capability ?? params.proxyId ?? "";
+  const { type, idParam, baseUrl } = params;
 
-  if (!isValidProxyId(proxyId)) {
+  if (!isValidCapabilityToken(capability)) {
     throw new ProxyError(404, "Unknown addon capability.");
   }
 
@@ -185,7 +195,7 @@ export async function handleStreamRequest(
     });
   }
 
-  const { config, token } = await resolveCapabilityAndCredential(proxyId, deps);
+  const { config, token } = await resolveCapabilityAndCredential(capability, deps);
 
   const segment = serializeTorrentioConfigWithCredential(
     config.public_config,
@@ -202,9 +212,8 @@ export async function handleStreamRequest(
       signal: AbortSignal.timeout(UPSTREAM_REQUEST_TIMEOUT_MS),
     });
   } catch (err) {
-    console.error(
-      `[Stremio Proxy] Upstream stream fetch failed for capability: ${proxyId}`
-    );
+    // Audit: Never log the capability token or complete addon URL
+    console.error("[Stremio Proxy] Upstream stream fetch failed.");
     throw new ProxyError(
       502,
       "Torrentio temporarily unavailable: " + sanitizeErrorMessage(err, token)
@@ -219,7 +228,7 @@ export async function handleStreamRequest(
   }
 
   const upstreamData = await upstreamRes.json();
-  const rewritten = rewriteTorrentioStreamResponse(upstreamData, proxyId, baseUrl);
+  const rewritten = rewriteTorrentioStreamResponse(upstreamData, capability, baseUrl);
 
   return new Response(JSON.stringify(rewritten), {
     status: 200,
@@ -232,18 +241,20 @@ export async function handleStreamRequest(
 }
 
 /**
- * Handles GET /api/stremio/[proxyId]/resolve/[...resolverPath]
+ * Handles GET /api/stremio/[capability]/resolve/[...resolverPath]
  */
 export async function handleResolveRequest(
   params: {
-    proxyId: string;
+    capability?: string;
+    proxyId?: string;
     resolverSegments: string[];
   },
   deps?: ProxyDependencies
 ): Promise<Response> {
-  const { proxyId, resolverSegments } = params;
+  const capability = params.capability ?? params.proxyId ?? "";
+  const { resolverSegments } = params;
 
-  if (!isValidProxyId(proxyId)) {
+  if (!isValidCapabilityToken(capability)) {
     throw new ProxyError(404, "Unknown addon capability.");
   }
 
@@ -252,7 +263,7 @@ export async function handleResolveRequest(
     throw new ProxyError(400, "Invalid resolver path parameters.");
   }
 
-  const { token } = await resolveCapabilityAndCredential(proxyId, deps);
+  const { token } = await resolveCapabilityAndCredential(capability, deps);
 
   const upstreamUrl = reconstructTorrentioResolverUrl(token, safeData);
   const fetchFn = deps?.fetchFn || fetch;
@@ -265,9 +276,8 @@ export async function handleResolveRequest(
       signal: AbortSignal.timeout(UPSTREAM_REQUEST_TIMEOUT_MS),
     });
   } catch (err) {
-    console.error(
-      `[Stremio Proxy] Upstream resolver fetch failed for capability: ${proxyId}`
-    );
+    // Audit: Never log the capability token or complete addon URL
+    console.error("[Stremio Proxy] Upstream resolver fetch failed.");
     throw new ProxyError(
       502,
       "Torrentio temporarily unavailable: " + sanitizeErrorMessage(err, token)

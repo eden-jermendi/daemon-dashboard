@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   CORS_HEADERS,
-  handleManifestRequest,
+  handleResolveRequest,
   ProxyError,
 } from "@/features/stremio-switch/server/proxy";
 
@@ -14,11 +14,19 @@ export async function OPTIONS(): Promise<Response> {
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ proxyId: string }> }
+  {
+    params,
+  }: {
+    params: Promise<{ capability: string; resolverPath?: string[] }>;
+  }
 ): Promise<Response> {
   try {
-    const { proxyId } = await params;
-    return await handleManifestRequest(proxyId);
+    const { capability, resolverPath } = await params;
+
+    return await handleResolveRequest({
+      capability,
+      resolverSegments: resolverPath || [],
+    });
   } catch (err) {
     if (err instanceof ProxyError) {
       return NextResponse.json(
@@ -26,7 +34,7 @@ export async function GET(
         { status: err.statusCode, headers: CORS_HEADERS }
       );
     }
-    console.error("[Stremio Proxy] Unexpected error in manifest route handler");
+    console.error("[Stremio Proxy] Unexpected error in resolver route handler");
     return NextResponse.json(
       { error: "Internal capability proxy error." },
       { status: 500, headers: CORS_HEADERS }

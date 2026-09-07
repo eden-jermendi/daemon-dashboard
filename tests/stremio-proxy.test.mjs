@@ -1,7 +1,11 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  formatCapabilityHint,
+  generateStremioCapability,
+  hashStremioCapability,
   isAllowedCdnHost,
+  isValidCapabilityToken,
   isValidProxyId,
   parseTorrentioResolverUrl,
   reconstructTorrentioResolverUrl,
@@ -570,6 +574,200 @@ describe("Milestone 6D — Secure Stremio Capability Proxy & Stream Resolver", (
       assert.equal(sanitized.includes(sensitiveToken), false);
       assert.equal(sanitized.includes("torrentio.strem.fun"), false);
       assert.equal(sanitized.includes("[REDACTED"), true);
+    });
+  });
+
+  describe("12. Capability Hardening & Hash-Only Security Model", () => {
+    it("1. generated capability has >=256 bits of entropy source", () => {
+      const token = generateStremioCapability();
+
+      assert.ok(token.startsWith("st_"));
+      // Prefix 'st_' (3 chars) + 32 bytes in base64url (43 chars) = 46 chars
+      assert.equal(token.length, 46);
+
+      // Verify payload decodes to exactly 32 bytes (256 bits)
+      const rawPayload = token.slice(3);
+      const decodedBytes = Buffer.from(rawPayload, "base64url");
+      assert.equal(decodedBytes.length, 32);
+
+      // Verify statistical uniqueness across sample
+      const set = new Set();
+      for (let i = 0; i < 200; i++) {
+        const t = generateStremioCapability();
+        assert.equal(set.has(t), false);
+        set.add(t);
+      }
+      assert.equal(set.size, 200);
+    });
+
+    it("2. generated capability is URL-safe without encoding", () => {
+      for (let i = 0; i < 50; i++) {
+        const token = generateStremioCapability();
+        // Must match safe path segment regex: no /, ?, #, &, +, =, %, spaces
+        assert.match(token, /^st_[A-Za-z0-9_-]{43}$/);
+        assert.equal(encodeURIComponent(token), token);
+        assert.equal(token.includes("/"), false);
+        assert.equal(token.includes("?"), false);
+        assert.equal(token.includes("&"), false);
+        assert.equal(token.includes("#"), false);
+      }
+    });
+
+    it("3. hash is deterministic lowercase hex SHA-256", () => {
+      const token = generateStremioCapability();
+      const hash1 = hashStremioCapability(token);
+      const hash2 = hashStremioCapability(token);
+
+      assert.equal(hash1, hash2);
+      assert.match(hash1, /^[0-9a-f]{64}$/);
+      assert.equal(hash1, hash1.toLowerCase());
+    });
+
+    it("4. different capabilities create different hashes (collision resistance)", () => {
+      const tokenA = generateStremioCapability();
+      const tokenB = generateStremioCapability();
+
+      assert.notEqual(tokenA, tokenB);
+      assert.notEqual(hashStremioCapability(tokenA), hashStremioCapability(tokenB));
+    });
+
+    it("5. formatCapabilityHint produces safe non-secret display prefix/suffix", () => {
+      const token = generateStremioCapability();
+      const hint = formatCapabilityHint(token);
+
+      assert.match(hint, /^st_[A-Za-z0-9_-]{4}\.\.\.[A-Za-z0-9_-]{4}$/);
+      assert.equal(hint.length, 14);
+      // Hint must never equal full token
+      assert.notEqual(hint, token);
+      assert.equal(hint.includes(token), false);
+    });
+
+    it("6. isValidCapabilityToken validates shape and length bounds strictly", () => {
+      const validToken = generateStremioCapability();
+      assert.equal(isValidCapabilityToken(validToken), true);
+
+      // Rejections
+      assert.equal(isValidCapabilityToken(""), false);
+      assert.equal(isValidCapabilityToken(null), false);
+      assert.equal(isValidCapabilityToken(undefined), false);
+      assert.equal(isValidCapabilityToken(12345), false);
+      assert.equal(isValidCapabilityToken({}), false);
+      // Missing prefix
+      assert.equal(isValidCapabilityToken(validToken.slice(3)), false);
+      // Bad characters
+      assert.equal(isValidCapabilityToken(`st_invalid/slashes/here/${"a".repeat(30)}`), false);
+      assert.equal(isValidCapabilityToken(`st_invalid?query=true${"a".repeat(30)}`), false);
+      assert.equal(isValidCapabilityToken(`st_path..traversal${"a".repeat(30)}`), false);
+      // Too short
+      assert.equal(isValidCapabilityToken("st_short_token"), false);
+      // Too long (>64 chars)
+      assert.equal(isValidCapabilityToken("st_" + "a".repeat(65)), false);
+    });
+
+    it("7. end-to-end capability resolution, rotation, revocation, and generic 404 invariants", () => {
+      // In-memory store keyed solely by capability_hash (never plaintext)
+      const store = new Map();
+
+      function resolveToken(token) {
+        if (!isValidCapabilityToken(token)) {
+          return { status: 404, error: "Unknown addon capability." };
+        }
+        const hash = hashStremioCapability(token);
+        const config = store.get(hash);
+        if (!config) {
+          return { status: 404, error: "Unknown addon capability." };
+        }
+        return { status: 200, config };
+      }
+
+      // Step 1: Generate capability 1 and persist ONLY hash
+      const token1 = generateStremioCapability();
+      const hash1 = hashStremioCapability(token1);
+      const userConfig = { userId: "user_owner_1", settings: { sort: "quality" } };
+      store.set(hash1, userConfig);
+
+      // Invariant: Plaintext token is never stored
+      assert.equal(store.has(token1), false);
+      assert.equal(store.has(hash1), true);
+
+      // Step 2: Valid capability resolves configuration (8)
+      const res1 = resolveToken(token1);
+      assert.equal(res1.status, 200);
+      assert.deepEqual(res1.config, userConfig);
+
+      // Step 3: Wrong capability returns generic unknown 404 (9)
+      const wrongToken = generateStremioCapability();
+      const resWrong = resolveToken(wrongToken);
+      assert.equal(resWrong.status, 404);
+      assert.equal(resWrong.error, "Unknown addon capability.");
+
+      // Step 4: Rotate capability (10, 11)
+      const token2 = generateStremioCapability();
+      const hash2 = hashStremioCapability(token2);
+      // Invalidate old, store new
+      store.delete(hash1);
+      store.set(hash2, userConfig);
+
+      // Old capability fails immediately after rotation with generic 404 (10)
+      const resOld = resolveToken(token1);
+      assert.equal(resOld.status, 404);
+      assert.equal(resOld.error, "Unknown addon capability.");
+
+      // New capability succeeds after rotation (11)
+      const resNew = resolveToken(token2);
+      assert.equal(resNew.status, 200);
+      assert.deepEqual(resNew.config, userConfig);
+
+      // Step 5: Revoked capability fails immediately with generic 404 (12)
+      store.delete(hash2); // null hash in DB
+      const resRevoked = resolveToken(token2);
+      assert.equal(resRevoked.status, 404);
+      assert.equal(resRevoked.error, "Unknown addon capability.");
+
+      // Step 6: Malformed capability fails with generic 404 without revealing state (13)
+      const resMalformed1 = resolveToken("not-a-token");
+      assert.equal(resMalformed1.status, 404);
+      assert.equal(resMalformed1.error, "Unknown addon capability.");
+
+      const resMalformed2 = resolveToken("../traversal/attempt");
+      assert.equal(resMalformed2.status, 404);
+      assert.equal(resMalformed2.error, "Unknown addon capability.");
+    });
+
+    it("8. capability token never appears in error messages or exception output", () => {
+      const capabilityToken = generateStremioCapability();
+      const err = new Error(`Request failed for segment ${capabilityToken}`);
+      const sanitized = sanitizeErrorMessage(err, capabilityToken);
+
+      assert.equal(sanitized.includes(capabilityToken), false);
+      assert.equal(sanitized.includes("[REDACTED"), true);
+    });
+
+    it("9. stream rewriting produces URLs with capability token without leaking credentials", () => {
+      const capabilityToken = generateStremioCapability();
+      const rawRdToken = "SENSITIVE_RD_TOKEN_XYZ_1234567890";
+      const streamPayload = {
+        streams: [
+          {
+            name: "Daemon Stream",
+            title: "Test Video",
+            url: `https://torrentio.strem.fun/resolve/realdebrid/${rawRdToken}/72f242db89e763b6ce390f25d576195c2169b149/null/0/test.mp4`,
+          },
+        ],
+      };
+
+      const rewritten = rewriteTorrentioStreamResponse(
+        streamPayload,
+        capabilityToken,
+        "https://daemon.local:3000"
+      );
+
+      const serialized = JSON.stringify(rewritten);
+      assert.equal(serialized.includes(rawRdToken), false);
+      assert.equal(
+        rewritten.streams[0].url,
+        `https://daemon.local:3000/api/stremio/${capabilityToken}/resolve/72f242db89e763b6ce390f25d576195c2169b149/null/0/test.mp4`
+      );
     });
   });
 });

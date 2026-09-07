@@ -26,15 +26,15 @@ export async function GET(
   {
     params,
   }: {
-    params: Promise<{ proxyId: string; type: string; id: string }>;
+    params: Promise<{ capability: string; type: string; id: string }>;
   }
 ): Promise<Response> {
   try {
-    const { proxyId, type, id } = await params;
+    const { capability, type, id } = await params;
     const baseUrl = resolveBaseUrl(request);
 
     return await handleStreamRequest({
-      proxyId,
+      capability,
       type,
       idParam: id,
       baseUrl,

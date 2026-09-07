@@ -76,6 +76,15 @@ This roadmap tracks the development milestones of **Daemon Dashboard**. Only com
     - Torrentio failure video redirect interception converted to normalized safe 503 errors.
     - In-flight token refresh promise coalescing preventing simultaneous refresh race conditions.
     - Comprehensive unit test suite with 31 new tests (total 128 tests passing) and live verification against Real-Debrid and Torrentio upstream.
+  - [x] **Milestone 6D+ Capability Hardening: Hash-Only Stremio Capability Tokens & Rotation**
+    - High-entropy bearer tokens (`st_<base64url>` with 256 bits of entropy via `crypto.randomBytes(32)`).
+    - Hash-only database persistence (`capability_hash` VARCHAR(64) UNIQUE storing lowercase hex SHA-256 digest) ensuring bearer tokens are never recoverable from database reads or backups.
+    - Dropped plaintext `proxy_id` UUID column and constraints in migration `004_stremio_capability_tokens.sql`.
+    - Revoked and rejected previously exposed test capability with generic 404.
+    - Public capability routes refactored to `/api/stremio/[capability]/*` with indexed SHA-256 hash lookups.
+    - Authenticated rotation and revocation endpoints (`/api/integrations/stremio/providers/[id]/rotate`, `/api/integrations/stremio/providers/[id]/revoke`) with one-time plaintext token display.
+    - Audited logging and error sanitization ensuring raw capability tokens and complete URLs are never logged or leaked.
+    - Total test suite expanded to 139 passing tests (including entropy, URL safety, deterministic hashing, rotation, and revocation invariants).
   - [ ] **Milestone 6E: Stremio Switch Management UI & Addon Installation Workflow**
   
 - [ ] **Milestone 7: Modular Design Pattern Refactoring**

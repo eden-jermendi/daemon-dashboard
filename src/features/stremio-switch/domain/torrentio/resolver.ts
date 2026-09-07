@@ -219,7 +219,7 @@ export function reconstructTorrentioResolverUrl(
  */
 export function rewriteTorrentioStreamResponse(
   data: unknown,
-  proxyId: string,
+  capability: string,
   baseUrl: string
 ): TorrentioStreamResponse {
   if (!data || typeof data !== "object") {
@@ -256,7 +256,7 @@ export function rewriteTorrentioStreamResponse(
         ? `${parsed.infoHash}/${parsed.torrentId}/${parsed.fileIdx}/${encodeURIComponent(parsed.filename)}`
         : `${parsed.infoHash}/${parsed.torrentId}/${parsed.fileIdx}`;
 
-      const safeUrl = `${baseUrl}/api/stremio/${proxyId}/resolve/${pathSuffix}`;
+      const safeUrl = `${baseUrl}/api/stremio/${capability}/resolve/${pathSuffix}`;
 
       rewrittenStreams.push({
         ...stream,

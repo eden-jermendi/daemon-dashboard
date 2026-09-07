@@ -1,5 +1,9 @@
 import "server-only";
 import {
+  formatCapabilityHint,
+  generateStremioCapability,
+  hashStremioCapability,
+  isValidCapabilityToken,
   parseTorrentioUrl,
   serializeTorrentioConfigWithCredential,
 } from "../domain/torrentio/index.ts";
@@ -8,6 +12,7 @@ import type { TorrentioPublicConfig } from "../domain/torrentio/types.ts";
 import * as repository from "./repository.ts";
 import type {
   ImportTorrentioUrlInput,
+  RotateCapabilityResult,
   StremioProviderConfigDto,
   StremioProviderConfigRecord,
 } from "./types.ts";
@@ -57,7 +62,7 @@ export function validateTorrentioPublicConfig(config: unknown): TorrentioPublicC
 
 /**
  * Transforms a raw database record into a safe, redacted public DTO.
- * Explicitly strips user_id and contains zero provider credentials.
+ * Explicitly strips user_id and contains zero provider credentials or capability hashes.
  */
 export function toStremioProviderConfigDto(
   record: StremioProviderConfigRecord
@@ -74,7 +79,8 @@ export function toStremioProviderConfigDto(
     id: record.id,
     providerName: record.provider_name,
     publicConfig: record.public_config,
-    proxyId: record.proxy_id,
+    capabilityConfigured: Boolean(record.capability_hash),
+    capabilityHint: record.capability_hint ?? null,
     createdAt,
     updatedAt,
     isConfigured: true,
@@ -169,10 +175,65 @@ export async function deleteUserStremioConfig(
 }
 
 /**
- * Server-internal lookup by proxy_id for the future public capability proxy.
+ * Finds a Stremio configuration record by its raw capability token.
+ * Validates token shape, computes SHA-256 digest, and performs an indexed lookup.
+ * Fails closed on malformed or nonexistent tokens.
  */
-export async function findConfigByProxyIdInternal(
-  proxyId: string
+export async function findConfigByCapabilityToken(
+  token: string
 ): Promise<StremioProviderConfigRecord | null> {
-  return repository.getStremioConfigByProxyIdInternal(proxyId);
+  if (!isValidCapabilityToken(token)) {
+    return null;
+  }
+  const hash = hashStremioCapability(token);
+  return repository.getStremioConfigByCapabilityHash(hash);
+}
+
+/**
+ * Generates a new cryptographically random capability token, hashes it with SHA-256,
+ * and stores ONLY the hash in the database, invalidating any previous capability immediately.
+ * Returns the plaintext capability token once to the caller.
+ */
+export async function rotateStremioCapability(
+  userId: string,
+  id: string
+): Promise<RotateCapabilityResult> {
+  if (!userId || !id) {
+    throw new Error("Authentication required.");
+  }
+
+  const capability = generateStremioCapability();
+  const hash = hashStremioCapability(capability);
+  const hint = formatCapabilityHint(capability);
+
+  const updated = await repository.updateStremioCapabilityHash(
+    userId,
+    id,
+    hash,
+    hint
+  );
+
+  if (!updated) {
+    throw new Error("Configuration not found or unauthorized.");
+  }
+
+  return {
+    capability,
+    capabilityHint: hint,
+  };
+}
+
+/**
+ * Revokes an existing capability token by setting hash and hint to null.
+ * Existing URLs immediately fail public resolution with a generic 404.
+ */
+export async function revokeStremioCapability(
+  userId: string,
+  id: string
+): Promise<boolean> {
+  if (!userId || !id) {
+    return false;
+  }
+
+  return repository.updateStremioCapabilityHash(userId, id, null, null);
 }

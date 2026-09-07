@@ -8,7 +8,6 @@ import {
 } from "../src/features/stremio-switch/domain/torrentio/index.ts";
 
 const SYNTHETIC_VALIDATION_TOKEN = "0123456789abcdef0123456789abcdef";
-const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // Pure validation logic mirroring service.validateTorrentioPublicConfig
 function validateTorrentioPublicConfig(config) {
@@ -56,7 +55,8 @@ function toStremioProviderConfigDto(record) {
     id: record.id,
     providerName: record.provider_name,
     publicConfig: record.public_config,
-    proxyId: record.proxy_id,
+    capabilityConfigured: Boolean(record.capability_hash),
+    capabilityHint: record.capability_hint ?? undefined,
     createdAt,
     updatedAt,
     isConfigured: true,
@@ -85,8 +85,20 @@ class MockStremioRepository {
     ) || null;
   }
 
-  async getStremioConfigByProxyIdInternal(proxyId) {
-    return this.records.find((r) => r.proxy_id === proxyId) || null;
+  async getStremioConfigByCapabilityHash(hash) {
+    if (!hash) return null;
+    return this.records.find((r) => r.capability_hash === hash) || null;
+  }
+
+  async updateStremioCapabilityHash(userId, id, capabilityHash, capabilityHint) {
+    const record = this.records.find(
+      (r) => r.user_id === userId && r.id === id
+    );
+    if (!record) return false;
+    record.capability_hash = capabilityHash;
+    record.capability_hint = capabilityHint;
+    record.updated_at = new Date();
+    return true;
   }
 
   async upsertStremioConfig({ userId, providerName, publicConfig }) {
@@ -104,7 +116,8 @@ class MockStremioRepository {
       user_id: userId,
       provider_name: providerName,
       public_config: publicConfig,
-      proxy_id: randomUUID(),
+      capability_hash: null,
+      capability_hint: null,
       created_at: now,
       updated_at: now,
     };
@@ -214,13 +227,14 @@ describe("Milestone 6C — Stremio Provider Configuration Persistence", () => {
   });
 
   describe("Public DTO Shape & Secret Containment", () => {
-    it("ensures public DTO strips user_id and contains zero credentials", () => {
+    it("ensures public DTO strips user_id, contains zero credentials, and never exposes capability_hash or raw capability", () => {
       const record = {
         id: "cf100000-0000-4000-8000-000000000001",
         user_id: "usr_secret_daemon_owner_999",
         provider_name: "torrentio",
         public_config: { providers: ["yts"], sort: "quality" },
-        proxy_id: "px100000-0000-4000-8000-000000000002",
+        capability_hash: "a3f5b72e81d4c90a12e345f67890123456789abcdef0123456789abcdef01234",
+        capability_hint: "st_9xK2...4pLm",
         created_at: new Date("2026-09-07T00:00:00Z"),
         updated_at: new Date("2026-09-07T01:00:00Z"),
       };
@@ -230,18 +244,42 @@ describe("Milestone 6C — Stremio Provider Configuration Persistence", () => {
       assert.equal(dto.id, "cf100000-0000-4000-8000-000000000001");
       assert.equal(dto.providerName, "torrentio");
       assert.deepEqual(dto.publicConfig, { providers: ["yts"], sort: "quality" });
-      assert.equal(dto.proxyId, "px100000-0000-4000-8000-000000000002");
+      assert.equal(dto.capabilityConfigured, true);
+      assert.equal(dto.capabilityHint, "st_9xK2...4pLm");
       assert.equal(dto.isConfigured, true);
       assert.equal(dto.createdAt, "2026-09-07T00:00:00.000Z");
       assert.equal(dto.updatedAt, "2026-09-07T01:00:00.000Z");
 
-      // Critical secret checks: user_id must NOT be exposed in DTO
+      // Critical secret containment checks:
+      // Never expose capability_hash or plaintext proxyId/capability in DTO
+      assert.equal("capability_hash" in dto, false);
+      assert.equal("capabilityHash" in dto, false);
+      assert.equal("proxy_id" in dto, false);
+      assert.equal("proxyId" in dto, false);
+      assert.equal("capability" in dto, false);
       assert.equal("user_id" in dto, false);
       assert.equal("userId" in dto, false);
       assert.equal("secret" in dto, false);
       assert.equal("token" in dto, false);
       assert.equal("access_token" in dto, false);
       assert.equal("refresh_token" in dto, false);
+    });
+
+    it("correctly indicates unconfigured capability when capability_hash is null", () => {
+      const unconfiguredRecord = {
+        id: "cf100000-0000-4000-8000-000000000002",
+        user_id: "usr_user_2",
+        provider_name: "torrentio",
+        public_config: {},
+        capability_hash: null,
+        capability_hint: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      const dto = toStremioProviderConfigDto(unconfiguredRecord);
+      assert.equal(dto.capabilityConfigured, false);
+      assert.equal(dto.capabilityHint, undefined);
     });
   });
 
@@ -272,7 +310,7 @@ describe("Milestone 6C — Stremio Provider Configuration Persistence", () => {
       assert.equal(user2List.length, 0);
     });
 
-    it("preserves capability proxy_id on configuration update (upsert)", async () => {
+    it("preserves capability hash on configuration update (upsert)", async () => {
       const repo = new MockStremioRepository();
       const userId = "user_alpha";
 
@@ -282,8 +320,10 @@ describe("Milestone 6C — Stremio Provider Configuration Persistence", () => {
         publicConfig: { sort: "quality" },
       });
 
-      const initialProxyId = firstSave.proxy_id;
-      assert.match(initialProxyId, UUID_V4_REGEX);
+      // Set a capability hash
+      const sampleHash = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+      const sampleHint = "st_1234...cdef";
+      await repo.updateStremioCapabilityHash(userId, firstSave.id, sampleHash, sampleHint);
 
       // Update the configuration
       const updatedSave = await repo.upsertStremioConfig({
@@ -292,8 +332,9 @@ describe("Milestone 6C — Stremio Provider Configuration Persistence", () => {
         publicConfig: { sort: "seeders", providers: ["yts"] },
       });
 
-      // Invariant: proxy_id must NOT change on update so installed add-on URLs remain valid
-      assert.equal(updatedSave.proxy_id, initialProxyId);
+      // Invariant: capability_hash must NOT change on update so installed add-on URLs remain valid
+      assert.equal(updatedSave.capability_hash, sampleHash);
+      assert.equal(updatedSave.capability_hint, sampleHint);
       assert.deepEqual(updatedSave.public_config, { sort: "seeders", providers: ["yts"] });
     });
 
@@ -325,7 +366,7 @@ describe("Milestone 6C — Stremio Provider Configuration Persistence", () => {
       assert.equal(deleted, null);
     });
 
-    it("allows server-internal lookup by proxy_id for future proxy", async () => {
+    it("allows server-internal lookup by capability_hash", async () => {
       const repo = new MockStremioRepository();
       const userId = "user_alpha";
 
@@ -335,13 +376,42 @@ describe("Milestone 6C — Stremio Provider Configuration Persistence", () => {
         publicConfig: { sort: "quality" },
       });
 
-      const found = await repo.getStremioConfigByProxyIdInternal(record.proxy_id);
+      const hash = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+      const hint = "st_abcd...6789";
+      await repo.updateStremioCapabilityHash(userId, record.id, hash, hint);
+
+      const found = await repo.getStremioConfigByCapabilityHash(hash);
       assert.ok(found);
       assert.equal(found.id, record.id);
       assert.equal(found.user_id, userId);
 
-      const notFound = await repo.getStremioConfigByProxyIdInternal(randomUUID());
+      const notFound = await repo.getStremioConfigByCapabilityHash("nonexistent_hash");
       assert.equal(notFound, null);
+    });
+
+    it("supports capability revocation by clearing hash and hint", async () => {
+      const repo = new MockStremioRepository();
+      const userId = "user_alpha";
+
+      const record = await repo.upsertStremioConfig({
+        userId,
+        providerName: "torrentio",
+        publicConfig: { sort: "quality" },
+      });
+
+      const hash = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210";
+      await repo.updateStremioCapabilityHash(userId, record.id, hash, "st_hint");
+
+      // Verify active
+      const before = await repo.getStremioConfigByCapabilityHash(hash);
+      assert.ok(before);
+
+      // Revoke
+      await repo.updateStremioCapabilityHash(userId, record.id, null, null);
+
+      // Verify revoked
+      const after = await repo.getStremioConfigByCapabilityHash(hash);
+      assert.equal(after, null);
     });
   });
 });
