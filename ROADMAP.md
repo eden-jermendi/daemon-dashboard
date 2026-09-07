@@ -66,8 +66,17 @@ This roadmap tracks the development milestones of **Daemon Dashboard**. Only com
     - Server repository & service boundary (`src/features/stremio-switch/server/`).
     - Authenticated management API routes (`GET /api/integrations/stremio/providers`, `POST /api/integrations/stremio/providers`, `DELETE /api/integrations/stremio/providers/[id]`) with strict Neon Auth session derivation and SQL ownership enforcement.
     - Automated unit test suite with 12 focused tests covering import sanitization, ownership scoping, upsert behavior, proxy ID format, and public config validation (`tests/stremio-persistence.test.mjs`).
-  - [ ] **Milestone 6D: Stremio Public Capability Proxy & Stream Resolver Routing**
-
+  - [x] **Milestone 6D: Stremio Public Capability Proxy & Stream Resolver Routing**
+    - Public Next.js App Router capability endpoints (`/api/stremio/[proxyId]/manifest.json`, `/api/stremio/[proxyId]/stream/[type]/[id]`, `/api/stremio/[proxyId]/resolve/[...resolverPath]`) authenticated solely by unguessable `proxy_id` UUID.
+    - Updated `src/proxy.ts` matcher to exclude `/api/stremio` from Neon Auth browser session redirects.
+    - Runtime Real-Debrid OAuth token injection into ephemeral upstream Torrentio URLs with zero token persistence, logging, or client exposure.
+    - Protocol-aware stream JSON rewriting replacing credential-bearing Torrentio resolver URLs with safe Daemon capability URLs.
+    - Safe resolver data model strictly parsing only non-secret components (`infoHash`, `torrentId`, `fileIdx`, `filename`) and failing closed on malformed inputs.
+    - Direct Real-Debrid CDN hand-off via HTTP 302 redirects with strict allowlist validation (`*.download.real-debrid.com`, `download.real-debrid.com`) and zero media byte proxying.
+    - Torrentio failure video redirect interception converted to normalized safe 503 errors.
+    - In-flight token refresh promise coalescing preventing simultaneous refresh race conditions.
+    - Comprehensive unit test suite with 31 new tests (total 128 tests passing) and live verification against Real-Debrid and Torrentio upstream.
+  - [ ] **Milestone 6E: Stremio Switch Management UI & Addon Installation Workflow**
   
 - [ ] **Milestone 7: Modular Design Pattern Refactoring**
   - Analyze current codebase to identify opportunities for modularity improvements.

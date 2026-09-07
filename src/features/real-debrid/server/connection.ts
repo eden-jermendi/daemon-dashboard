@@ -189,14 +189,23 @@ export async function deleteRealDebridConnection(userId: string): Promise<void> 
   `;
 }
 
+// In-process promise coalescer preventing duplicate simultaneous refresh calls for the same user
+const inFlightRefreshes = new Map<string, Promise<string>>();
+
 /**
  * Obtains a valid, unexpired Real-Debrid access token for the given user.
  * If the cached access token is nearing expiration, automatically refreshes it
  * using the stored user-bound client credentials and documented device grant.
+ * Coalesces simultaneous refresh calls for the same user to prevent race conditions.
  */
 export async function getValidRealDebridAccessToken(
   userId: string
 ): Promise<string | null> {
+  const inFlight = inFlightRefreshes.get(userId);
+  if (inFlight) {
+    return inFlight;
+  }
+
   const connection = await getRealDebridConnection(userId);
   if (!connection) {
     return null;
@@ -223,22 +232,31 @@ export async function getValidRealDebridAccessToken(
     );
   }
 
-  const clientId = decryptToken(connection.encrypted_client_id);
-  const clientSecret = decryptToken(connection.encrypted_client_secret);
-  const storedRefreshToken = decryptToken(connection.encrypted_refresh_token);
+  const refreshPromise = (async () => {
+    try {
+      const clientId = decryptToken(connection.encrypted_client_id!);
+      const clientSecret = decryptToken(connection.encrypted_client_secret!);
+      const storedRefreshToken = decryptToken(connection.encrypted_refresh_token!);
 
-  const newTokens = await refreshRealDebridTokens({
-    clientId,
-    clientSecret,
-    refreshToken: storedRefreshToken,
-  });
+      const newTokens = await refreshRealDebridTokens({
+        clientId,
+        clientSecret,
+        refreshToken: storedRefreshToken,
+      });
 
-  await saveRealDebridConnection({
-    userId,
-    tokens: newTokens,
-    clientId,
-    clientSecret,
-  });
+      await saveRealDebridConnection({
+        userId,
+        tokens: newTokens,
+        clientId,
+        clientSecret,
+      });
 
-  return newTokens.access_token;
+      return newTokens.access_token;
+    } finally {
+      inFlightRefreshes.delete(userId);
+    }
+  })();
+
+  inFlightRefreshes.set(userId, refreshPromise);
+  return refreshPromise;
 }
