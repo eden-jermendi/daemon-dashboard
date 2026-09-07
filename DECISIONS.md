@@ -76,4 +76,13 @@ This document records the foundational architectural decisions established for *
 - **Decision**: External provider telemetry (e.g., live Real-Debrid account status, tier, expiration) must not block the rendering or navigation of module control surfaces. Module shells, navigation links, and operational controls render immediately from local connection status, while live provider telemetry streams independently behind React Suspense boundaries. Provider database queries within a single render pass are deduplicated using React's request-scoped `cache()`.
 - **Rationale**: External third-party provider APIs (such as Real-Debrid servers in France) introduce significant WAN latency (~1.6s from Oceania/APAC) that degrades navigation when placed on the critical SSR path. Isolating provider I/O behind streaming ensures near-instant route transitions while retaining full live telemetry and strict server-side credential isolation without layout shifts.
 
+### 17. Stremio Provider Configuration Persistence & Public Configuration Storage
+- **Decision**: Stremio provider configurations in `stremio_provider_configs` persist strictly public, non-sensitive options (`public_config` JSONB) and an unguessable capability identifier (`proxy_id` UUID). Stremio configurations must NEVER store Real-Debrid API tokens, OAuth secrets, or credential-bearing URLs. Credential injection occurs purely at runtime using Daemon's existing Real-Debrid OAuth subsystem (`getTorrentioRealDebridCredential(userId)`). When users import an existing configured Torrentio URL, the domain parser extracts `publicConfig` and immediately discards any supplied credential.
+- **Rationale**: Prevents duplicate secret storage, eliminates desynchronization when OAuth tokens refresh, and avoids credential leakage in configuration management endpoints or database backups.
+
+### 18. Mandatory Protocol-Aware Stream URL Rewriting in Public Proxy (Milestone 6D Safeguard)
+- **Decision**: In future Milestone 6D (Stremio Public Capability Proxy), Daemon must NOT transparently forward Torrentio stream response JSON to Stremio clients. Upstream Torrentio responses embed direct resolver URLs shaped like `/resolve/realdebrid/<OAUTH_TOKEN>/...`. The Daemon proxy must rewrite those resolver URLs into Daemon-owned capability URLs (`/api/stremio/[proxy_id]/resolve/...`) before returning them to Stremio.
+- **Rationale**: Torrentio stream responses embed the Bearer token directly in stream URLs. If Daemon forward-proxied those JSON responses transparently, the user's OAuth access token would be exposed to Stremio clients, add-on sync logs, and external players. Protocol-aware rewriting keeps the provider token strictly server-side.
+
+
 

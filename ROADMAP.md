@@ -59,8 +59,14 @@ This roadmap tracks the development milestones of **Daemon Dashboard**. Only com
     - Verified negative control behavior with invalid tokens.
     - Settled unified credential architecture (zero duplicate secret storage, dynamic request-time injection).
     - Established domain helper and server-only credential bridge (`src/features/stremio-switch/server/real-debrid-credential.ts`).
-  - [ ] **Milestone 6C+: Stremio Switch Persistence & Addon Configuration Management**
-  - [ ] **Milestone 6D+: Stremio Public Capability Proxy & Stream Resolver Routing**
+  - [x] **Milestone 6C: Stremio Switch Persistence & Addon Configuration Management**
+    - Database migration `003_stremio_provider_configs.sql` for persisting public addon configuration and capability `proxy_id`.
+    - Zero duplicate credential storage invariant: strictly stores only non-secret `public_config` (JSONB) and unguessable `proxy_id` (UUID).
+    - URL import parsing through domain engine strictly discards any supplied provider credentials.
+    - Server repository & service boundary (`src/features/stremio-switch/server/`).
+    - Authenticated management API routes (`GET /api/integrations/stremio/providers`, `POST /api/integrations/stremio/providers`, `DELETE /api/integrations/stremio/providers/[id]`) with strict Neon Auth session derivation and SQL ownership enforcement.
+    - Automated unit test suite with 12 focused tests covering import sanitization, ownership scoping, upsert behavior, proxy ID format, and public config validation (`tests/stremio-persistence.test.mjs`).
+  - [ ] **Milestone 6D: Stremio Public Capability Proxy & Stream Resolver Routing**
 
   
 - [ ] **Milestone 7: Modular Design Pattern Refactoring**
