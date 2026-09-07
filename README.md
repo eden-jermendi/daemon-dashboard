@@ -4,14 +4,14 @@ Daemon Dashboard is a modular personal dashboard and control plane for services,
 
 ## Current Status
 
-**Milestone 5: Magnet & Torrent Workflow** (Complete)
+**Milestone 6: Stremio Switch Integration** (Complete)
 
 - **Application Authentication (Milestone 2A)**: Protected by Neon Auth (Managed Better Auth via `@neondatabase/auth`). Unauthenticated visitors are redirected to `/auth/sign-in`.
 - **Real-Debrid Open-Source Device OAuth (Milestone 2B)**: Device code authorization (`X245A4XAIBGVM`) with encrypted persistence in Neon Postgres (AES-256-GCM for user-bound credentials and tokens) and automatic token refresh via documented device grant.
 - **Real-Debrid Live Account Status (Milestone 3)**: Live Premium subscription monitoring, expiration countdown, fidelity points, and status display on the Dashboard tile and `/modules/real-debrid`.
 - **URL Checking & Link Unrestriction (Milestone 4)**: Interactive hoster URL validation, availability/support checks, debrid link generation, multi-stream quality resolution, and direct data plane handoff.
 - **Magnet & Torrent Workflow (Milestone 5)**: BitTorrent magnet ingestion, metadata resolution, interactive file selection tree, bounded live progress/speed/seeders polling, direct link unrestriction reuse, and torrent lifecycle management.
-- **Stremio Switch (Milestone 6 - Planned)**: Operates as an independent application; integration assessment deferred.
+- **Native Stremio Switch Module (Milestone 6)**: Dedicated module at `/modules/stremio-switch` and live dashboard tile. Pure TypeScript Torrentio domain engine, sensitive URL configuration import with automatic credential discarding, structured configuration editor, hash-only 256-bit capability token security model, one-time plaintext URL display with direct `stremio://` desktop install, rotation, and revocation. Capability endpoints (`/api/stremio/[capability]/*`) rewrite stream URLs and dynamically inject user-bound Real-Debrid OAuth credentials at request time, handing off media streams directly to Real-Debrid CDN endpoints via HTTP 302 redirects with zero media byte proxying.
 
 ## Tech Stack
 

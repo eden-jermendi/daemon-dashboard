@@ -6,6 +6,7 @@ import {
   formatExpirationDate,
   formatPremiumRemaining,
 } from "@/features/real-debrid/server/account";
+import { getUserStremioConfig } from "@/features/stremio-switch/server/service.ts";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default async function Home() {
   const userId = session?.user?.id ?? null;
 
   const accountResult = await getRealDebridAccount(userId);
+  const stremioConfig = userId ? await getUserStremioConfig(userId, "torrentio") : null;
 
   return (
     <div className={styles.mainLayout}>
@@ -155,26 +157,61 @@ export default async function Home() {
           )}
 
           {/* Stremio Switch Module */}
-          <ModuleTile
-            title="STREMIO SWITCH"
-            status="NOT INTEGRATED"
-            statusType="muted"
-            colSpan={4}
-            footerNote="STANDALONE SERVICE"
-          >
-            <p className={styles.moduleDescription}>
-              Multi-profile configuration switcher for Stremio. Currently operates
-              as an independent application.
-            </p>
-            <div className={styles.specRow}>
-              <span className={styles.specKey}>Status</span>
-              <span className={styles.specVal}>Separate Repository</span>
-            </div>
-            <div className={styles.specRow}>
-              <span className={styles.specKey}>Integration</span>
-              <span className={styles.specVal}>Deferred to Milestone 6</span>
-            </div>
-          </ModuleTile>
+          {stremioConfig ? (
+            <ModuleTile
+              title="STREMIO SWITCH"
+              status={stremioConfig.capabilityConfigured ? "ADDON ACTIVE" : "CONFIGURED"}
+              statusType={stremioConfig.capabilityConfigured ? "online" : "warning"}
+              colSpan={4}
+              destination="/modules/stremio-switch"
+              actionLabel="OPEN"
+              footerNote="NATIVE STREMIO ADDON PROXY"
+            >
+              <p className={styles.moduleDescription}>
+                Torrentio stream proxy with dynamic Real-Debrid OAuth credential injection and capability routing.
+              </p>
+              <div className={styles.specRow}>
+                <span className={styles.specKey}>Provider</span>
+                <span className={styles.specVal}>Torrentio (Configured)</span>
+              </div>
+              <div className={styles.specRow}>
+                <span className={styles.specKey}>Capability</span>
+                <span className={styles.specVal}>
+                  {stremioConfig.capabilityConfigured
+                    ? stremioConfig.capabilityHint || "Active"
+                    : "Not Generated / Revoked"}
+                </span>
+              </div>
+              <div className={styles.specRow}>
+                <span className={styles.specKey}>Sort Policy</span>
+                <span className={styles.specVal}>
+                  {stremioConfig.publicConfig.sort || "quality"}
+                </span>
+              </div>
+            </ModuleTile>
+          ) : (
+            <ModuleTile
+              title="STREMIO SWITCH"
+              status="NOT CONFIGURED"
+              statusType="muted"
+              colSpan={4}
+              destination="/modules/stremio-switch"
+              actionLabel="CONFIGURE"
+              footerNote="STREMIO CONTROL PLANE"
+            >
+              <p className={styles.moduleDescription}>
+                Multi-profile configuration switcher and capability proxy for Stremio addons.
+              </p>
+              <div className={styles.specRow}>
+                <span className={styles.specKey}>Provider</span>
+                <span className={styles.specVal}>Torrentio (Ready)</span>
+              </div>
+              <div className={styles.specRow}>
+                <span className={styles.specKey}>Integration</span>
+                <span className={styles.specVal}>Native Module</span>
+              </div>
+            </ModuleTile>
+          )}
 
           {/* Generic Future Slot 1 */}
           <ModuleTile

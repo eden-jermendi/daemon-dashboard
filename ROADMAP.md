@@ -85,7 +85,16 @@ This roadmap tracks the development milestones of **Daemon Dashboard**. Only com
     - Authenticated rotation and revocation endpoints (`/api/integrations/stremio/providers/[id]/rotate`, `/api/integrations/stremio/providers/[id]/revoke`) with one-time plaintext token display.
     - Audited logging and error sanitization ensuring raw capability tokens and complete URLs are never logged or leaked.
     - Total test suite expanded to 139 passing tests (including entropy, URL safety, deterministic hashing, rotation, and revocation invariants).
-  - [ ] **Milestone 6E: Stremio Switch Management UI & Addon Installation Workflow**
+  - [x] **Milestone 6E: Native Stremio Switch Module UI & Addon Installation Workflow**
+    - Native dashboard tile in `src/app/page.tsx` displaying live local configuration state, addon capability status, and fast navigation without blocking SSR on external APIs (ADR 16).
+    - Dedicated management module at `/modules/stremio-switch` adhering to Daemon's utilitarian systems-admin aesthetic using pure CSS Modules (`page.module.css`).
+    - Sensitive ephemeral Torrentio manifest URL import with automatic extraction of public options and immediate discarding of provider API keys.
+    - Structured configuration editor covering canonical Torrentio options (sort policy, resolution limits, size bounds, debrid flags, torrent providers, quality exclusions, and priority languages).
+    - Configuration persistence preserving active capability tokens without invalidating installed Stremio addons.
+    - Hash-only capability security UX: unrecoverable 256-bit bearer token generation, rotation with explicit invalidation warnings, and revocation.
+    - One-time transient plaintext capability display with direct `stremio://` protocol install links and HTTPS clipboard copy, zeroed from client memory upon dismissal.
+    - Full end-to-end verification through Next.js proxy, Torrentio upstream query, dynamic RD OAuth injection, and Real-Debrid CDN redirects.
+    - Unit test suite expanded with 12 new UI state and lifecycle tests (total 151 passing tests).
   
 - [ ] **Milestone 7: Modular Design Pattern Refactoring**
   - Analyze current codebase to identify opportunities for modularity improvements.
